@@ -9,11 +9,14 @@
 #include <cstdlib>
 using namespace std;
 
-#define DATA_FILES_DIRECTORY ("data_files")
+#define DATA_FILES_DIRECTORY ("data_files") //the directory in which the binary data files live
 
-bool already_in_data_files_directory = false;
+bool already_in_data_files_directory = false; //set to true when directory is changed to that of the data files
 
 
+/*
+ * changes the current directory to the data files directory. It will create the directory, if necessary.
+ */
 void change_to_data_files_directory ()
 {
 	if (! already_in_data_files_directory)
@@ -30,7 +33,17 @@ void change_to_data_files_directory ()
 	already_in_data_files_directory = true;
 }
 
-int write_binary_files(bool mu, bool all, bool user_number, bool movie_number, bool date_number, bool rating_number)
+
+/*
+ * writes the ratings files (.dta) to binary files. These will be written in the data files directory. 
+ * mu:  true to use data files from the mu directory. false to use um.
+ * all: true to use the ``all" data file. false to use the ``qual" one.
+ * user_number: do you want to create a file of all the user numbers?
+ * movie_number: do you want to create a file of all the movie numbers?
+ * date_number: do you want to create a file of all the date numbers?
+ * rating_number: do you want to create a file of all the ratings (1-5) ?
+ */
+int write_binary_ratings_files(bool mu, bool all, bool user_number, bool movie_number, bool date_number, bool rating_number)
 {
 	change_to_data_files_directory ();
 	
@@ -129,6 +142,8 @@ int write_binary_files(bool mu, bool all, bool user_number, bool movie_number, b
 		return -1;
 	}
 	/**
+	* this stuff is for testing. It reads out all the data files as numbers to standard out. Use with caution. 
+	 
 	char buffer[4];
 	ifstream myFile;
 	
@@ -188,8 +203,8 @@ int write_binary_files(bool mu, bool all, bool user_number, bool movie_number, b
 int main (int argc, char **argv)
 {
 	cout << "hello, world! \n";
-	write_binary_files(true, true, true, true, true, true);
-	write_binary_files(true, false, true, true, true, false);
-	write_binary_files(false, true, true, true, true, true);
-	return write_binary_files(false, false, true, true, true, false);
+	write_binary_ratings_files(true, true, true, true, true, true);
+	write_binary_ratings_files(true, false, true, true, true, false);
+	write_binary_ratings_files(false, true, true, true, true, true);
+	return write_binary_ratings_files(false, false, true, true, true, false);
 }
