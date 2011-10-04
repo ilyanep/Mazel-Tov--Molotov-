@@ -1,0 +1,43 @@
+This data is for use in CS 156b class ONLY.  Do not share otherwise.
+--------------------------------------------------------------------------
+This directory has the data files sorted by movie first then user.
+
+all.dta        All 102,416,306 data points (including the qual points,
+	       with their ratings blanked out as 0). Format explained
+               below.
+
+all.idx        Index of the lines in all.dta that specifies which
+	       set that line comes from. The indices 1,2,3 designate
+	       training set and 4,5 designate probe/qual sets. See
+               explanation below.
+
+qual.dta       The 2,749,898 test points in the same order as in
+	       all.dta, with no ratings. 
+
+example.dta    Example of a solution file that computes a real number
+	       between 1.0 and 5.0 corresponding to each line, and in
+	       the same order, of qual.dta. Your solution files in the
+               same format as example.dta should be uploaded per class
+               instructions in order to get the out-of-sample error
+               posted on the score board.
+
+--------------------------------------------------------------------------
+Format of each line in all.dta:
+(user number)       (movie number)       (date number)       (rating)
+
+Format of each line in qual.dta:
+(user number)       (movie number)       (date number)
+
+where: user number is between 1 and 458,293
+       movie number is between 1 and 17,770
+       date number is between 1 and 2243 (in days)
+       rating is between 1 and 5 (integer). 0 means blanked-out rating.
+--------------------------------------------------------------------------
+Explanation of indices for different sets:
+
+1: base (96% of the training set picked at random, use freely)
+2: valid (2% of the training set picked at random, use freely)
+3: hidden (2% of the training set picked at random, use freely)
+4: probe (1/3 of the test set picked at random, use freely but carefully)
+5: qual (2/3 of the test set picked at random, for testing the results)
+--------------------------------------------------------------------------
