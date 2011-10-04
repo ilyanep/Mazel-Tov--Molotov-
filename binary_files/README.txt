@@ -1,3 +1,3 @@
 This shall be a library to create, load, and use binary data files. 
 
-Editing this just to see if I can . . .
+Everything in the data_files folder IS NOT BACKED UP WITH GIT. This is to save on space. 
