@@ -77,12 +77,13 @@ int dta_to_bins(string inFile, string *outFiles, int *bytes_per_column, int num_
     if (inputFile.is_open())
     {
         // ok, now for each line, read each int, and write the relevent bytes from that int to the relevant file.
+        inputFile >> line[0];
         while ( inputFile.good() )
         {
             for (i=0; i < num_columns; i++)
             {
-                inputFile >> line[0];
                 outFileStreams[i].write(&(writable[0]), bytes_per_column[i]);
+                inputFile >> line[0];
             }
         }
         
@@ -190,8 +191,23 @@ int write_data_files_to_bin()
     return write_mu_files_to_bin() + write_um_files_to_bin();
 }
 
+
+int file_size(string filename)
+{
+    FILE * inFile;
+    cout << filename.c_str() << "\n";
+    inFile = fopen(filename.c_str(), "r");
+    fseek(inFile, 0, SEEK_END);
+    int answer = ftell(inFile);
+    fclose(inFile);
+    return answer;
+}
+
+
+
 int main (int argc, char **argv)
 {
+    change_to_data_files_directory ();
     cout << "hello, world! \n";
     write_data_files_to_bin();
     
@@ -257,6 +273,8 @@ int main (int argc, char **argv)
      printf("\n\n\n");
      myFile.close();
      
+    
+    printf("%d\n", file_size("mu_all_datenumber_2bytes.bin"));
      
     return 0;
 }
