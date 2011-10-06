@@ -13,8 +13,23 @@ using namespace std;
 #define MU_DIRECTORY (string("../../mu"))   // the directory where the mu data is, relative to the data_files directory.
 #define UM_DIRECTORY (string("../../um"))   // the directory where the um data is, relative to the data_files directory.
 
-bool already_in_data_files_directory = false; //set to true when directory is changed to that of the data files
-
+bool    already_in_data_files_directory = false; //set to true when directory is changed to that of the data files
+int   * mu_all_usernumber   = NULL; // array of the user id numbers in the same order as the mu/all.dta file. It's NULL if it hasn't been loaded.
+short * mu_all_movienumber  = NULL; // array of the movie id numbers in the same order as the mu/all.dta file. It's NULL if it hasn't been loaded.
+short * mu_all_datenumber   = NULL; // array of the date numbers in the same order as the mu/all.dta file. It's NULL if it hasn't been loaded.
+char  * mu_all_rating       = NULL; // array of the rating numbers (1-5) in the same order as the mu/all.dta file. It's NULL if it hasn't been loaded.
+char  * mu_idx_ratingset    = NULL; // array of the data set index numbers in the same order as the mu/all.idx file. It's NULL if it hasn't been loaded.
+int   * mu_qual_usernumber  = NULL; // array of the user id numbers in the same order as the mu/qual.dta file. It's NULL if it hasn't been loaded.
+short * mu_qual_movienumber = NULL; // array of the movie id numbers in the same order as the mu/qual.dta file. It's NULL if it hasn't been loaded.
+short * mu_qual_datenumber  = NULL; // array of the date numbers in the same order as the mu/qual.dta file. It's NULL if it hasn't been loaded.
+int   * um_all_usernumber   = NULL; // array of the user id numbers in the same order as the um/all.dta file. It's NULL if it hasn't been loaded.
+short * um_all_movienumber  = NULL; // array of the movie id numbers in the same order as the um/all.dta file. It's NULL if it hasn't been loaded.
+short * um_all_datenumber   = NULL; // array of the date numbers in the same order as the um/all.dta file. It's NULL if it hasn't been loaded.
+char  * um_all_rating       = NULL; // array of the rating numbers (1-5) in the same order as the um/all.dta file. It's NULL if it hasn't been loaded.
+char  * um_idx_ratingset    = NULL; // array of the data set index numbers in the same order as the um/all.idx file. It's NULL if it hasn't been loaded.
+int   * um_qual_usernumber  = NULL; // array of the user id numbers in the same order as the um/qual.dta file. It's NULL if it hasn't been loaded.
+short * um_qual_movienumber = NULL; // array of the movie id numbers in the same order as the um/qual.dta file. It's NULL if it hasn't been loaded.
+short * um_qual_datenumber  = NULL; // array of the date numbers in the same order as the um/qual.dta file. It's NULL if it hasn't been loaded.
 
 /*
  * changes the current directory to the data files directory. It will create the directory, if necessary.
@@ -192,16 +207,1578 @@ int write_data_files_to_bin()
 }
 
 
+/*
+ * returns the size of the file with the filename (relative to data_files directory) input (in bytes)
+ * filename: the name of the file the size of which you want
+ *
+ * returns the size of the file, or 0 if there is an error in reading.
+ */
 int file_size(string filename)
 {
+    change_to_data_files_directory ();
     FILE * inFile;
-    cout << filename.c_str() << "\n";
     inFile = fopen(filename.c_str(), "r");
+    if (inFile == NULL)
+    {
+        cerr << ("could not judge the size of "+filename+".\n").c_str();
+        return 0;
+    }
     fseek(inFile, 0, SEEK_END);
     int answer = ftell(inFile);
     fclose(inFile);
     return answer;
 }
+
+/*
+ * get the bytes of a file 
+ * filename: the name of the file (relative to data_files directory) you want.
+ *
+ * returns a pointer (from malloc) to the bytes in memory. This is on the heap. Returns NULL if something goes wrong. 
+ */
+char *file_bytes(string filename)
+{
+    change_to_data_files_directory ();
+    int size = file_size(filename);
+    if (size > 0)
+    {
+        char *byte_array = (char *) malloc(size); // note that the bytes will be stored on the heap.
+                                                  // This means you have to manually deallocate them.
+        if (byte_array == NULL)
+        {
+            cerr << "malloc failed while trying to allocate " << size << " bytes for " << filename.c_str() << ".\n";
+            return NULL;
+        }
+        ifstream inFile;
+        inFile.open(filename.c_str(), ios::in | ios::binary);
+        if (inFile.good())
+        {
+            inFile.read (byte_array, size);
+        } else {
+            cerr << ("could not read bytes of "+filename+".\n" ).c_str();
+            return  NULL;
+        }
+        inFile.close();
+        return byte_array;
+    }
+    cerr << ("could not read bytes of "+filename+", because size !> 0.\n").c_str();
+    return NULL;
+}
+
+
+
+// free any memory occupied by mu_all_usernumber, which stores the usernumbers from the mu/all.dta file, and set mu_all_usernumber to NULL.
+void free_mu_all_usernumber()
+{
+    if (mu_all_usernumber != NULL)
+    {
+        free(mu_all_usernumber);
+        mu_all_usernumber = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_all_usernumber points to, 
+ * malloc up some new memory  space, and fill it with mu_all_usernumber_4bytes.bin.
+ * set mu_all_usernumber to point to that memory. Note that this is on the heap.
+ * If mu_all_usernumber_4bytes.bin does not exist, this generates it from mu/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_usernumber winds up being NULL.
+ */
+int force_load_mu_all_usernumber()
+{
+    //clear up the memory we're writing to
+    free_mu_all_usernumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_all_usernumber_4bytes.bin", "r"))
+    {
+        if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
+        {
+            cerr << "could neither find nor create mu_all_usernumber_4bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_all_usernumber = (int *) file_bytes("mu_all_usernumber_4bytes.bin");
+    
+    // make sure everything read ok
+    if (mu_all_usernumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_all_usernumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_all_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_usernumber_4bytes.bin into that memory. If mu_all_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_usernumber is not NULL, this trusts that mu_all_usernumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_usernumber winds up being NULL.
+ */
+int load_mu_all_usernumber()
+{
+    if (mu_all_usernumber == NULL)
+    {
+        return force_load_mu_all_usernumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth user number, as ordered in mu/all.dta.
+ *
+ * This is retrieved from the mu_all_usernumber array. 
+ *
+ * If mu_all_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_usernumber_4bytes.bin into that memory. If mu_all_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_usernumber is not NULL, this trusts that mu_all_usernumber is already correct. 
+ *
+ * index: the index (starting at 0) of the user number desired, as ordered by all.dta
+ *
+ * returns the indexth user number, or -1 in the event that something has gone wrong in the process of loading mu_all_usernumber_4bytes.bin.
+ */
+int get_mu_all_usernumber(int index)
+{
+    if (load_mu_all_usernumber() != 0)
+    {
+        cerr << "cannot get mu_all_usernumber [" << index << "], because of errors loading mu_all_usernumber_4bytes.bin.\n";
+        return -1;
+    }
+    return mu_all_usernumber[index];
+}
+
+
+
+
+
+
+// free any memory occupied by mu_all_movienumber, which stores the movienumbers from the mu/all.dta file, and set mu_all_movienumber to NULL.
+void free_mu_all_movienumber()
+{
+    if (mu_all_movienumber != NULL)
+    {
+        free(mu_all_movienumber);
+        mu_all_movienumber = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_all_movienumber points to, 
+ * malloc up some new memory  space, and fill it with mu_all_movienumber_2bytes.bin.
+ * set mu_all_movienumber to point to that memory. Note that this is on the heap.
+ * If mu_all_movienumber_2bytes.bin does not exist, this generates it from mu/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_movienumber winds up being NULL.
+ */
+int force_load_mu_all_movienumber()
+{
+    //clear up the memory we're writing to
+    free_mu_all_movienumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_all_movienumber_2bytes.bin", "r"))
+    {
+        if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
+        {
+            cerr << "could neither find nor create mu_all_movienumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_all_movienumber = (short *) file_bytes("mu_all_movienumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (mu_all_movienumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_all_movienumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_all_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_movienumber_2bytes.bin into that memory. If mu_all_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_movienumber is not NULL, this trusts that mu_all_movienumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_movienumber winds up being NULL.
+ */
+int load_mu_all_movienumber()
+{
+    if (mu_all_movienumber == NULL)
+    {
+        return force_load_mu_all_movienumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth movie number, as ordered in mu/all.dta.
+ *
+ * This is retrieved from the mu_all_movienumber array. 
+ *
+ * If mu_all_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_movienumber_2bytes.bin into that memory. If mu_all_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_movienumber is not NULL, this trusts that mu_all_movienumber is already correct. 
+ *
+ * index: the index (starting at 0) of the movie number desired, as ordered by all.dta
+ *
+ * returns the indexth movie number, or -1 in the event that something has gone wrong in the process of loading mu_all_movienumber_2bytes.bin.
+ */
+short get_mu_all_movienumber(int index)
+{
+    if (load_mu_all_movienumber() != 0)
+    {
+        cerr << "cannot get mu_all_movienumber [" << index << "], because of errors loading mu_all_movienumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return mu_all_movienumber[index];
+}
+
+
+
+
+
+
+
+
+// free any memory occupied by mu_all_datenumber, which stores the datenumbers from the mu/all.dta file, and set mu_all_datenumber to NULL.
+void free_mu_all_datenumber()
+{
+    if (mu_all_datenumber != NULL)
+    {
+        free(mu_all_datenumber);
+        mu_all_datenumber = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_all_datenumber points to, 
+ * malloc up some new memory  space, and fill it with mu_all_datenumber_2bytes.bin.
+ * set mu_all_datenumber to point to that memory. Note that this is on the heap.
+ * If mu_all_datenumber_2bytes.bin does not exist, this generates it from mu/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_datenumber winds up being NULL.
+ */
+int force_load_mu_all_datenumber()
+{
+    //clear up the memory we're writing to
+    free_mu_all_datenumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_all_datenumber_2bytes.bin", "r"))
+    {
+        if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
+        {
+            cerr << "could neither find nor create mu_all_datenumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_all_datenumber = (short *) file_bytes("mu_all_datenumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (mu_all_datenumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_all_datenumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_all_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_datenumber_2bytes.bin into that memory. If mu_all_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_datenumber is not NULL, this trusts that mu_all_datenumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_datenumber winds up being NULL.
+ */
+int load_mu_all_datenumber()
+{
+    if (mu_all_datenumber == NULL)
+    {
+        return force_load_mu_all_datenumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth date number, as ordered in mu/all.dta.
+ *
+ * This is retrieved from the mu_all_datenumber array. 
+ *
+ * If mu_all_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_datenumber_2bytes.bin into that memory. If mu_all_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_datenumber is not NULL, this trusts that mu_all_datenumber is already correct. 
+ *
+ * index: the index (starting at 0) of the date number desired, as ordered by all.dta
+ *
+ * returns the indexth date number, or -1 in the event that something has gone wrong in the process of loading mu_all_datenumber_2bytes.bin.
+ */
+short get_mu_all_datenumber(int index)
+{
+    if (load_mu_all_datenumber() != 0)
+    {
+        cerr << "cannot get mu_all_datenumber [" << index << "], because of errors loading mu_all_datenumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return mu_all_datenumber[index];
+}
+
+
+
+
+
+
+
+// free any memory occupied by mu_all_rating, which stores the datenumbers from the mu/all.dta file, and set mu_all_rating to NULL.
+void free_mu_all_rating()
+{
+    if (mu_all_rating != NULL)
+    {
+        free(mu_all_rating);
+        mu_all_rating = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_all_rating points to, 
+ * malloc up some new memory  space, and fill it with mu_all_rating_1byte.bin.
+ * set mu_all_rating to point to that memory. Note that this is on the heap.
+ * If mu_all_rating_1byte.bin does not exist, this generates it from mu/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_rating winds up being NULL.
+ */
+int force_load_mu_all_rating()
+{
+    //clear up the memory we're writing to
+    free_mu_all_rating();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_all_rating_1byte.bin", "r"))
+    {
+        if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
+        {
+            cerr << "could neither find nor create mu_all_rating_1byte.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_all_rating = file_bytes("mu_all_rating_1byte.bin");
+    
+    // make sure everything read ok
+    if (mu_all_rating == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_all_rating.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_all_rating is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_rating_1byte.bin into that memory. If mu_all_rating_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_rating is not NULL, this trusts that mu_all_rating is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_all_rating winds up being NULL.
+ */
+int load_mu_all_rating()
+{
+    if (mu_all_rating == NULL)
+    {
+        return force_load_mu_all_rating();
+    }
+    return 0;
+}
+/*
+ * returns the indexth rating (1-5), as ordered in mu/all.dta.
+ *
+ * This is retrieved from the mu_all_rating array. 
+ *
+ * If mu_all_rating is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_all_rating_1byte.bin into that memory. If mu_all_rating_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_all_rating is not NULL, this trusts that mu_all_rating is already correct. 
+ *
+ * index: the index (starting at 0) of the rating (1-5) desired, as ordered by all.dta
+ *
+ * returns the indexth rating (1-5), or -1 in the event that something has gone wrong in the process of loading mu_all_rating_1byte.bin.
+ */
+char get_mu_all_rating(int index)
+{
+    if (load_mu_all_rating() != 0)
+    {
+        cerr << "cannot get mu_all_rating [" << index << "], because of errors loading mu_all_rating_1byte.bin.\n";
+        return (char) (-1);
+    }
+    return mu_all_rating[index];
+}
+
+
+
+
+
+
+
+
+
+// free any memory occupied by mu_qual_usernumber, which stores the usernumbers from the mu/qual.dta file, and set mu_qual_usernumber to NULL.
+void free_mu_qual_usernumber()
+{
+    if (mu_qual_usernumber != NULL)
+    {
+        free(mu_qual_usernumber);
+        mu_qual_usernumber = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_qual_usernumber points to, 
+ * malloc up some new memory  space, and fill it with mu_qual_usernumber_4bytes.bin.
+ * set mu_qual_usernumber to point to that memory. Note that this is on the heap.
+ * If mu_qual_usernumber_4bytes.bin does not exist, this generates it from mu/qual.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_qual_usernumber winds up being NULL.
+ */
+int force_load_mu_qual_usernumber()
+{
+    //clear up the memory we're writing to
+    free_mu_qual_usernumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_qual_usernumber_4bytes.bin", "r"))
+    {
+        if (write_qual_dta_to_bin(MU_DIRECTORY+"/qual.dta", "mu_qual") != 0)
+        {
+            cerr << "could neither find nor create mu_qual_usernumber_4bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_qual_usernumber = (int *) file_bytes("mu_qual_usernumber_4bytes.bin");
+    
+    // make sure everything read ok
+    if (mu_qual_usernumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_qual_usernumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_qual_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_qual_usernumber_4bytes.bin into that memory. If mu_qual_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/qual.dta.
+ * If mu_qual_usernumber is not NULL, this trusts that mu_qual_usernumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_qual_usernumber winds up being NULL.
+ */
+int load_mu_qual_usernumber()
+{
+    if (mu_qual_usernumber == NULL)
+    {
+        return force_load_mu_qual_usernumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth user number, as ordered in mu/qual.dta.
+ *
+ * This is retrieved from the mu_qual_usernumber array. 
+ *
+ * If mu_qual_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_qual_usernumber_4bytes.bin into that memory. If mu_qual_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/qual.dta.
+ * If mu_qual_usernumber is not NULL, this trusts that mu_qual_usernumber is already correct. 
+ *
+ * index: the index (starting at 0) of the user number desired, as ordered by qual.dta
+ *
+ * returns the indexth user number, or -1 in the event that something has gone wrong in the process of loading mu_qual_usernumber_4bytes.bin.
+ */
+int get_mu_qual_usernumber(int index)
+{
+    if (load_mu_qual_usernumber() != 0)
+    {
+        cerr << "cannot get mu_qual_usernumber [" << index << "], because of errors loading mu_qual_usernumber_4bytes.bin.\n";
+        return -1;
+    }
+    return mu_qual_usernumber[index];
+}
+
+
+
+
+
+
+// free any memory occupied by mu_qual_movienumber, which stores the movienumbers from the mu/qual.dta file, and set mu_qual_movienumber to NULL.
+void free_mu_qual_movienumber()
+{
+    if (mu_qual_movienumber != NULL)
+    {
+        free(mu_qual_movienumber);
+        mu_qual_movienumber = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_qual_movienumber points to, 
+ * malloc up some new memory  space, and fill it with mu_qual_movienumber_2bytes.bin.
+ * set mu_qual_movienumber to point to that memory. Note that this is on the heap.
+ * If mu_qual_movienumber_2bytes.bin does not exist, this generates it from mu/qual.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_qual_movienumber winds up being NULL.
+ */
+int force_load_mu_qual_movienumber()
+{
+    //clear up the memory we're writing to
+    free_mu_qual_movienumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_qual_movienumber_2bytes.bin", "r"))
+    {
+        if (write_qual_dta_to_bin(MU_DIRECTORY+"/qual.dta", "mu_qual") != 0)
+        {
+            cerr << "could neither find nor create mu_qual_movienumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_qual_movienumber = (short *) file_bytes("mu_qual_movienumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (mu_qual_movienumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_qual_movienumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_qual_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_qual_movienumber_2bytes.bin into that memory. If mu_qual_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/qual.dta.
+ * If mu_qual_movienumber is not NULL, this trusts that mu_qual_movienumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_qual_movienumber winds up being NULL.
+ */
+int load_mu_qual_movienumber()
+{
+    if (mu_qual_movienumber == NULL)
+    {
+        return force_load_mu_qual_movienumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth movie number, as ordered in mu/qual.dta.
+ *
+ * This is retrieved from the mu_qual_movienumber array. 
+ *
+ * If mu_qual_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_qual_movienumber_2bytes.bin into that memory. If mu_qual_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/qual.dta.
+ * If mu_qual_movienumber is not NULL, this trusts that mu_qual_movienumber is already correct. 
+ *
+ * index: the index (starting at 0) of the movie number desired, as ordered by qual.dta
+ *
+ * returns the indexth movie number, or -1 in the event that something has gone wrong in the process of loading mu_qual_movienumber_2bytes.bin.
+ */
+short get_mu_qual_movienumber(int index)
+{
+    if (load_mu_qual_movienumber() != 0)
+    {
+        cerr << "cannot get mu_qual_movienumber [" << index << "], because of errors loading mu_qual_movienumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return mu_qual_movienumber[index];
+}
+
+
+
+
+
+
+
+
+// free any memory occupied by mu_qual_datenumber, which stores the datenumbers from the mu/qual.dta file, and set mu_qual_datenumber to NULL.
+void free_mu_qual_datenumber()
+{
+    if (mu_qual_datenumber != NULL)
+    {
+        free(mu_qual_datenumber);
+        mu_qual_datenumber = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_qual_datenumber points to, 
+ * malloc up some new memory  space, and fill it with mu_qual_datenumber_2bytes.bin.
+ * set mu_qual_datenumber to point to that memory. Note that this is on the heap.
+ * If mu_qual_datenumber_2bytes.bin does not exist, this generates it from mu/qual.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_qual_datenumber winds up being NULL.
+ */
+int force_load_mu_qual_datenumber()
+{
+    //clear up the memory we're writing to
+    free_mu_qual_datenumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_qual_datenumber_2bytes.bin", "r"))
+    {
+        if (write_qual_dta_to_bin(MU_DIRECTORY+"/qual.dta", "mu_qual") != 0)
+        {
+            cerr << "could neither find nor create mu_qual_datenumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_qual_datenumber = (short *) file_bytes("mu_qual_datenumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (mu_qual_datenumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_qual_datenumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_qual_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_qual_datenumber_2bytes.bin into that memory. If mu_qual_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/qual.dta.
+ * If mu_qual_datenumber is not NULL, this trusts that mu_qual_datenumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_qual_datenumber winds up being NULL.
+ */
+int load_mu_qual_datenumber()
+{
+    if (mu_qual_datenumber == NULL)
+    {
+        return force_load_mu_qual_datenumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth date number, as ordered in mu/qual.dta.
+ *
+ * This is retrieved from the mu_qual_datenumber array. 
+ *
+ * If mu_qual_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_qual_datenumber_2bytes.bin into that memory. If mu_qual_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/qual.dta.
+ * If mu_qual_datenumber is not NULL, this trusts that mu_qual_datenumber is already correct. 
+ *
+ * index: the index (starting at 0) of the date number desired, as ordered by qual.dta
+ *
+ * returns the indexth date number, or -1 in the event that something has gone wrong in the process of loading mu_qual_datenumber_2bytes.bin.
+ */
+short get_mu_qual_datenumber(int index)
+{
+    if (load_mu_qual_datenumber() != 0)
+    {
+        cerr << "cannot get mu_qual_datenumber [" << index << "], because of errors loading mu_qual_datenumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return mu_qual_datenumber[index];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// free any memory occupied by mu_idx_ratingset, which stores the datenumbers from the mu/all.dta file, and set mu_idx_ratingset to NULL.
+void free_mu_idx_ratingset()
+{
+    if (mu_idx_ratingset != NULL)
+    {
+        free(mu_idx_ratingset);
+        mu_idx_ratingset = NULL;
+    }
+}
+
+/* 
+ * free any memory mu_idx_ratingset points to, 
+ * malloc up some new memory  space, and fill it with mu_idx_ratingset_1byte.bin.
+ * set mu_idx_ratingset to point to that memory. Note that this is on the heap.
+ * If mu_idx_ratingset_1byte.bin does not exist, this generates it from mu/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_idx_ratingset winds up being NULL.
+ */
+int force_load_mu_idx_ratingset()
+{
+    //clear up the memory we're writing to
+    free_mu_idx_ratingset();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("mu_idx_ratingset_1byte.bin", "r"))
+    {
+        if (write_idx_to_bin(MU_DIRECTORY+"/all.idx", "mu_idx") != 0)
+        {
+            cerr << "could neither find nor create mu_idx_ratingset_1byte.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    mu_idx_ratingset = file_bytes("mu_idx_ratingset_1byte.bin");
+    
+    // make sure everything read ok
+    if (mu_idx_ratingset == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for mu_idx_ratingset.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If mu_idx_ratingset is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_idx_ratingset_1byte.bin into that memory. If mu_idx_ratingset_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_idx_ratingset is not NULL, this trusts that mu_idx_ratingset is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, mu_idx_ratingset winds up being NULL.
+ */
+int load_mu_idx_ratingset()
+{
+    if (mu_idx_ratingset == NULL)
+    {
+        return force_load_mu_idx_ratingset();
+    }
+    return 0;
+}
+/*
+ * returns the indexth rating set (1-5), as ordered in mu/all.dta.
+ *
+ * This is retrieved from the mu_idx_ratingset array. 
+ *
+ * If mu_idx_ratingset is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads mu_idx_ratingset_1byte.bin into that memory. If mu_idx_ratingset_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from mu/all.dta.
+ * If mu_idx_ratingset is not NULL, this trusts that mu_idx_ratingset is already correct. 
+ *
+ * index: the index (starting at 0) of the rating set (1-5) desired, as ordered by all.dta
+ *
+ * returns the indexth rating set (1-5), or -1 in the event that something has gone wrong in the process of loading mu_idx_ratingset_1byte.bin.
+ */
+char get_mu_idx_ratingset(int index)
+{
+    if (load_mu_idx_ratingset() != 0)
+    {
+        cerr << "cannot get mu_idx_ratingset [" << index << "], because of errors loading mu_idx_ratingset_1byte.bin.\n";
+        return (char) (-1);
+    }
+    return mu_idx_ratingset[index];
+}
+
+
+
+
+
+
+
+// free any memory occupied by um_all_usernumber, which stores the usernumbers from the um/all.dta file, and set um_all_usernumber to NULL.
+void free_um_all_usernumber()
+{
+    if (um_all_usernumber != NULL)
+    {
+        free(um_all_usernumber);
+        um_all_usernumber = NULL;
+    }
+}
+
+/* 
+ * free any memory um_all_usernumber points to, 
+ * malloc up some new memory  space, and fill it with um_all_usernumber_4bytes.bin.
+ * set um_all_usernumber to point to that memory. Note that this is on the heap.
+ * If um_all_usernumber_4bytes.bin does not exist, this generates it from um/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_usernumber winds up being NULL.
+ */
+int force_load_um_all_usernumber()
+{
+    //clear up the memory we're writing to
+    free_um_all_usernumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_all_usernumber_4bytes.bin", "r"))
+    {
+        if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
+        {
+            cerr << "could neither find nor create um_all_usernumber_4bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_all_usernumber = (int *) file_bytes("um_all_usernumber_4bytes.bin");
+    
+    // make sure everything read ok
+    if (um_all_usernumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_all_usernumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_all_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_usernumber_4bytes.bin into that memory. If um_all_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_usernumber is not NULL, this trusts that um_all_usernumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_usernumber winds up being NULL.
+ */
+int load_um_all_usernumber()
+{
+    if (um_all_usernumber == NULL)
+    {
+        return force_load_um_all_usernumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth user number, as ordered in um/all.dta.
+ *
+ * This is retrieved from the um_all_usernumber array. 
+ *
+ * If um_all_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_usernumber_4bytes.bin into that memory. If um_all_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_usernumber is not NULL, this trusts that um_all_usernumber is already correct. 
+ *
+ * index: the index (starting at 0) of the user number desired, as ordered by all.dta
+ *
+ * returns the indexth user number, or -1 in the event that something has gone wrong in the process of loading um_all_usernumber_4bytes.bin.
+ */
+int get_um_all_usernumber(int index)
+{
+    if (load_um_all_usernumber() != 0)
+    {
+        cerr << "cannot get um_all_usernumber [" << index << "], because of errors loading um_all_usernumber_4bytes.bin.\n";
+        return -1;
+    }
+    return um_all_usernumber[index];
+}
+
+
+
+
+
+
+// free any memory occupied by um_all_movienumber, which stores the movienumbers from the um/all.dta file, and set um_all_movienumber to NULL.
+void free_um_all_movienumber()
+{
+    if (um_all_movienumber != NULL)
+    {
+        free(um_all_movienumber);
+        um_all_movienumber = NULL;
+    }
+}
+
+/* 
+ * free any memory um_all_movienumber points to, 
+ * malloc up some new memory  space, and fill it with um_all_movienumber_2bytes.bin.
+ * set um_all_movienumber to point to that memory. Note that this is on the heap.
+ * If um_all_movienumber_2bytes.bin does not exist, this generates it from um/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_movienumber winds up being NULL.
+ */
+int force_load_um_all_movienumber()
+{
+    //clear up the memory we're writing to
+    free_um_all_movienumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_all_movienumber_2bytes.bin", "r"))
+    {
+        if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
+        {
+            cerr << "could neither find nor create um_all_movienumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_all_movienumber = (short *) file_bytes("um_all_movienumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (um_all_movienumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_all_movienumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_all_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_movienumber_2bytes.bin into that memory. If um_all_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_movienumber is not NULL, this trusts that um_all_movienumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_movienumber winds up being NULL.
+ */
+int load_um_all_movienumber()
+{
+    if (um_all_movienumber == NULL)
+    {
+        return force_load_um_all_movienumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth movie number, as ordered in um/all.dta.
+ *
+ * This is retrieved from the um_all_movienumber array. 
+ *
+ * If um_all_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_movienumber_2bytes.bin into that memory. If um_all_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_movienumber is not NULL, this trusts that um_all_movienumber is already correct. 
+ *
+ * index: the index (starting at 0) of the movie number desired, as ordered by all.dta
+ *
+ * returns the indexth movie number, or -1 in the event that something has gone wrong in the process of loading um_all_movienumber_2bytes.bin.
+ */
+short get_um_all_movienumber(int index)
+{
+    if (load_um_all_movienumber() != 0)
+    {
+        cerr << "cannot get um_all_movienumber [" << index << "], because of errors loading um_all_movienumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return um_all_movienumber[index];
+}
+
+
+
+
+
+
+
+
+// free any memory occupied by um_all_datenumber, which stores the datenumbers from the um/all.dta file, and set um_all_datenumber to NULL.
+void free_um_all_datenumber()
+{
+    if (um_all_datenumber != NULL)
+    {
+        free(um_all_datenumber);
+        um_all_datenumber = NULL;
+    }
+}
+
+/* 
+ * free any memory um_all_datenumber points to, 
+ * malloc up some new memory  space, and fill it with um_all_datenumber_2bytes.bin.
+ * set um_all_datenumber to point to that memory. Note that this is on the heap.
+ * If um_all_datenumber_2bytes.bin does not exist, this generates it from um/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_datenumber winds up being NULL.
+ */
+int force_load_um_all_datenumber()
+{
+    //clear up the memory we're writing to
+    free_um_all_datenumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_all_datenumber_2bytes.bin", "r"))
+    {
+        if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
+        {
+            cerr << "could neither find nor create um_all_datenumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_all_datenumber = (short *) file_bytes("um_all_datenumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (um_all_datenumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_all_datenumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_all_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_datenumber_2bytes.bin into that memory. If um_all_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_datenumber is not NULL, this trusts that um_all_datenumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_datenumber winds up being NULL.
+ */
+int load_um_all_datenumber()
+{
+    if (um_all_datenumber == NULL)
+    {
+        return force_load_um_all_datenumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth date number, as ordered in um/all.dta.
+ *
+ * This is retrieved from the um_all_datenumber array. 
+ *
+ * If um_all_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_datenumber_2bytes.bin into that memory. If um_all_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_datenumber is not NULL, this trusts that um_all_datenumber is already correct. 
+ *
+ * index: the index (starting at 0) of the date number desired, as ordered by all.dta
+ *
+ * returns the indexth date number, or -1 in the event that something has gone wrong in the process of loading um_all_datenumber_2bytes.bin.
+ */
+short get_um_all_datenumber(int index)
+{
+    if (load_um_all_datenumber() != 0)
+    {
+        cerr << "cannot get um_all_datenumber [" << index << "], because of errors loading um_all_datenumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return um_all_datenumber[index];
+}
+
+
+
+
+
+
+
+// free any memory occupied by um_all_rating, which stores the datenumbers from the um/all.dta file, and set um_all_rating to NULL.
+void free_um_all_rating()
+{
+    if (um_all_rating != NULL)
+    {
+        free(um_all_rating);
+        um_all_rating = NULL;
+    }
+}
+
+/* 
+ * free any memory um_all_rating points to, 
+ * malloc up some new memory  space, and fill it with um_all_rating_1byte.bin.
+ * set um_all_rating to point to that memory. Note that this is on the heap.
+ * If um_all_rating_1byte.bin does not exist, this generates it from um/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_rating winds up being NULL.
+ */
+int force_load_um_all_rating()
+{
+    //clear up the memory we're writing to
+    free_um_all_rating();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_all_rating_1byte.bin", "r"))
+    {
+        if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
+        {
+            cerr << "could neither find nor create um_all_rating_1byte.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_all_rating = file_bytes("um_all_rating_1byte.bin");
+    
+    // make sure everything read ok
+    if (um_all_rating == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_all_rating.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_all_rating is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_rating_1byte.bin into that memory. If um_all_rating_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_rating is not NULL, this trusts that um_all_rating is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_all_rating winds up being NULL.
+ */
+int load_um_all_rating()
+{
+    if (um_all_rating == NULL)
+    {
+        return force_load_um_all_rating();
+    }
+    return 0;
+}
+/*
+ * returns the indexth rating (1-5), as ordered in um/all.dta.
+ *
+ * This is retrieved from the um_all_rating array. 
+ *
+ * If um_all_rating is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_all_rating_1byte.bin into that memory. If um_all_rating_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_all_rating is not NULL, this trusts that um_all_rating is already correct. 
+ *
+ * index: the index (starting at 0) of the rating (1-5) desired, as ordered by all.dta
+ *
+ * returns the indexth rating (1-5), or -1 in the event that something has gone wrong in the process of loading um_all_rating_1byte.bin.
+ */
+char get_um_all_rating(int index)
+{
+    if (load_um_all_rating() != 0)
+    {
+        cerr << "cannot get um_all_rating [" << index << "], because of errors loading um_all_rating_1byte.bin.\n";
+        return (char) (-1);
+    }
+    return um_all_rating[index];
+}
+
+
+
+
+
+
+
+
+
+// free any memory occupied by um_qual_usernumber, which stores the usernumbers from the um/qual.dta file, and set um_qual_usernumber to NULL.
+void free_um_qual_usernumber()
+{
+    if (um_qual_usernumber != NULL)
+    {
+        free(um_qual_usernumber);
+        um_qual_usernumber = NULL;
+    }
+}
+
+/* 
+ * free any memory um_qual_usernumber points to, 
+ * malloc up some new memory  space, and fill it with um_qual_usernumber_4bytes.bin.
+ * set um_qual_usernumber to point to that memory. Note that this is on the heap.
+ * If um_qual_usernumber_4bytes.bin does not exist, this generates it from um/qual.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_qual_usernumber winds up being NULL.
+ */
+int force_load_um_qual_usernumber()
+{
+    //clear up the memory we're writing to
+    free_um_qual_usernumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_qual_usernumber_4bytes.bin", "r"))
+    {
+        if (write_qual_dta_to_bin(UM_DIRECTORY+"/qual.dta", "um_qual") != 0)
+        {
+            cerr << "could neither find nor create um_qual_usernumber_4bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_qual_usernumber = (int *) file_bytes("um_qual_usernumber_4bytes.bin");
+    
+    // make sure everything read ok
+    if (um_qual_usernumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_qual_usernumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_qual_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_qual_usernumber_4bytes.bin into that memory. If um_qual_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/qual.dta.
+ * If um_qual_usernumber is not NULL, this trusts that um_qual_usernumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_qual_usernumber winds up being NULL.
+ */
+int load_um_qual_usernumber()
+{
+    if (um_qual_usernumber == NULL)
+    {
+        return force_load_um_qual_usernumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth user number, as ordered in um/qual.dta.
+ *
+ * This is retrieved from the um_qual_usernumber array. 
+ *
+ * If um_qual_usernumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_qual_usernumber_4bytes.bin into that memory. If um_qual_usernumber_4bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/qual.dta.
+ * If um_qual_usernumber is not NULL, this trusts that um_qual_usernumber is already correct. 
+ *
+ * index: the index (starting at 0) of the user number desired, as ordered by qual.dta
+ *
+ * returns the indexth user number, or -1 in the event that something has gone wrong in the process of loading um_qual_usernumber_4bytes.bin.
+ */
+int get_um_qual_usernumber(int index)
+{
+    if (load_um_qual_usernumber() != 0)
+    {
+        cerr << "cannot get um_qual_usernumber [" << index << "], because of errors loading um_qual_usernumber_4bytes.bin.\n";
+        return -1;
+    }
+    return um_qual_usernumber[index];
+}
+
+
+
+
+
+
+// free any memory occupied by um_qual_movienumber, which stores the movienumbers from the um/qual.dta file, and set um_qual_movienumber to NULL.
+void free_um_qual_movienumber()
+{
+    if (um_qual_movienumber != NULL)
+    {
+        free(um_qual_movienumber);
+        um_qual_movienumber = NULL;
+    }
+}
+
+/* 
+ * free any memory um_qual_movienumber points to, 
+ * malloc up some new memory  space, and fill it with um_qual_movienumber_2bytes.bin.
+ * set um_qual_movienumber to point to that memory. Note that this is on the heap.
+ * If um_qual_movienumber_2bytes.bin does not exist, this generates it from um/qual.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_qual_movienumber winds up being NULL.
+ */
+int force_load_um_qual_movienumber()
+{
+    //clear up the memory we're writing to
+    free_um_qual_movienumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_qual_movienumber_2bytes.bin", "r"))
+    {
+        if (write_qual_dta_to_bin(UM_DIRECTORY+"/qual.dta", "um_qual") != 0)
+        {
+            cerr << "could neither find nor create um_qual_movienumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_qual_movienumber = (short *) file_bytes("um_qual_movienumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (um_qual_movienumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_qual_movienumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_qual_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_qual_movienumber_2bytes.bin into that memory. If um_qual_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/qual.dta.
+ * If um_qual_movienumber is not NULL, this trusts that um_qual_movienumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_qual_movienumber winds up being NULL.
+ */
+int load_um_qual_movienumber()
+{
+    if (um_qual_movienumber == NULL)
+    {
+        return force_load_um_qual_movienumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth movie number, as ordered in um/qual.dta.
+ *
+ * This is retrieved from the um_qual_movienumber array. 
+ *
+ * If um_qual_movienumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_qual_movienumber_2bytes.bin into that memory. If um_qual_movienumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/qual.dta.
+ * If um_qual_movienumber is not NULL, this trusts that um_qual_movienumber is already correct. 
+ *
+ * index: the index (starting at 0) of the movie number desired, as ordered by qual.dta
+ *
+ * returns the indexth movie number, or -1 in the event that something has gone wrong in the process of loading um_qual_movienumber_2bytes.bin.
+ */
+short get_um_qual_movienumber(int index)
+{
+    if (load_um_qual_movienumber() != 0)
+    {
+        cerr << "cannot get um_qual_movienumber [" << index << "], because of errors loading um_qual_movienumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return um_qual_movienumber[index];
+}
+
+
+
+
+
+
+
+
+// free any memory occupied by um_qual_datenumber, which stores the datenumbers from the um/qual.dta file, and set um_qual_datenumber to NULL.
+void free_um_qual_datenumber()
+{
+    if (um_qual_datenumber != NULL)
+    {
+        free(um_qual_datenumber);
+        um_qual_datenumber = NULL;
+    }
+}
+
+/* 
+ * free any memory um_qual_datenumber points to, 
+ * malloc up some new memory  space, and fill it with um_qual_datenumber_2bytes.bin.
+ * set um_qual_datenumber to point to that memory. Note that this is on the heap.
+ * If um_qual_datenumber_2bytes.bin does not exist, this generates it from um/qual.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_qual_datenumber winds up being NULL.
+ */
+int force_load_um_qual_datenumber()
+{
+    //clear up the memory we're writing to
+    free_um_qual_datenumber();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_qual_datenumber_2bytes.bin", "r"))
+    {
+        if (write_qual_dta_to_bin(UM_DIRECTORY+"/qual.dta", "um_qual") != 0)
+        {
+            cerr << "could neither find nor create um_qual_datenumber_2bytes.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_qual_datenumber = (short *) file_bytes("um_qual_datenumber_2bytes.bin");
+    
+    // make sure everything read ok
+    if (um_qual_datenumber == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_qual_datenumber.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_qual_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_qual_datenumber_2bytes.bin into that memory. If um_qual_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/qual.dta.
+ * If um_qual_datenumber is not NULL, this trusts that um_qual_datenumber is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_qual_datenumber winds up being NULL.
+ */
+int load_um_qual_datenumber()
+{
+    if (um_qual_datenumber == NULL)
+    {
+        return force_load_um_qual_datenumber();
+    }
+    return 0;
+}
+/*
+ * returns the indexth date number, as ordered in um/qual.dta.
+ *
+ * This is retrieved from the um_qual_datenumber array. 
+ *
+ * If um_qual_datenumber is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_qual_datenumber_2bytes.bin into that memory. If um_qual_datenumber_2bytes.bin does
+ * not exist, and this function wants to read it, it will generate it from um/qual.dta.
+ * If um_qual_datenumber is not NULL, this trusts that um_qual_datenumber is already correct. 
+ *
+ * index: the index (starting at 0) of the date number desired, as ordered by qual.dta
+ *
+ * returns the indexth date number, or -1 in the event that something has gone wrong in the process of loading um_qual_datenumber_2bytes.bin.
+ */
+short get_um_qual_datenumber(int index)
+{
+    if (load_um_qual_datenumber() != 0)
+    {
+        cerr << "cannot get um_qual_datenumber [" << index << "], because of errors loading um_qual_datenumber_2bytes.bin.\n";
+        return (short) (-1);
+    }
+    return um_qual_datenumber[index];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// free any memory occupied by um_idx_ratingset, which stores the datenumbers from the um/all.dta file, and set um_idx_ratingset to NULL.
+void free_um_idx_ratingset()
+{
+    if (um_idx_ratingset != NULL)
+    {
+        free(um_idx_ratingset);
+        um_idx_ratingset = NULL;
+    }
+}
+
+/* 
+ * free any memory um_idx_ratingset points to, 
+ * malloc up some new memory  space, and fill it with um_idx_ratingset_1byte.bin.
+ * set um_idx_ratingset to point to that memory. Note that this is on the heap.
+ * If um_idx_ratingset_1byte.bin does not exist, this generates it from um/all.dta.
+ * 
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_idx_ratingset winds up being NULL.
+ */
+int force_load_um_idx_ratingset()
+{
+    //clear up the memory we're writing to
+    free_um_idx_ratingset();
+    
+    // make sure we have a file to be reading from
+    if (! fopen("um_idx_ratingset_1byte.bin", "r"))
+    {
+        if (write_idx_to_bin(UM_DIRECTORY+"/all.idx", "um_idx") != 0)
+        {
+            cerr << "could neither find nor create um_idx_ratingset_1byte.bin.\n";
+            return -1;
+        }
+    }
+    
+    //read the file to the global variable
+    um_idx_ratingset = file_bytes("um_idx_ratingset_1byte.bin");
+    
+    // make sure everything read ok
+    if (um_idx_ratingset == NULL)
+    {
+        cerr << "error whilst trying to read the bytes for um_idx_ratingset.\n";
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * If um_idx_ratingset is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_idx_ratingset_1byte.bin into that memory. If um_idx_ratingset_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_idx_ratingset is not NULL, this trusts that um_idx_ratingset is already correct. 
+ *
+ * returns 0 on success, -1 on failure (malloc failed, file wouldn't read, etc.)
+ * in case of failure, um_idx_ratingset winds up being NULL.
+ */
+int load_um_idx_ratingset()
+{
+    if (um_idx_ratingset == NULL)
+    {
+        return force_load_um_idx_ratingset();
+    }
+    return 0;
+}
+/*
+ * returns the indexth rating set (1-5), as ordered in um/all.dta.
+ *
+ * This is retrieved from the um_idx_ratingset array. 
+ *
+ * If um_idx_ratingset is NULL, this mallocs up some memory for it (note that this is on the heap),
+ * and then loads um_idx_ratingset_1byte.bin into that memory. If um_idx_ratingset_1byte.bin does
+ * not exist, and this function wants to read it, it will generate it from um/all.dta.
+ * If um_idx_ratingset is not NULL, this trusts that um_idx_ratingset is already correct. 
+ *
+ * index: the index (starting at 0) of the rating set (1-5) desired, as ordered by all.dta
+ *
+ * returns the indexth rating set (1-5), or -1 in the event that something has gone wrong in the process of loading um_idx_ratingset_1byte.bin.
+ */
+char get_um_idx_ratingset(int index)
+{
+    if (load_um_idx_ratingset() != 0)
+    {
+        cerr << "cannot get um_idx_ratingset [" << index << "], because of errors loading um_idx_ratingset_1byte.bin.\n";
+        return (char) (-1);
+    }
+    return um_idx_ratingset[index];
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -209,8 +1786,14 @@ int main (int argc, char **argv)
 {
     change_to_data_files_directory ();
     cout << "hello, world! \n";
-    write_data_files_to_bin();
+    //write_data_files_to_bin();
+    for (int i=0;i<20;i++)
+    {
+        printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", get_um_all_usernumber(i), get_um_all_movienumber(i), get_um_all_datenumber(i), get_um_all_rating(i), get_um_idx_ratingset(i), get_um_qual_usernumber(i), get_um_qual_movienumber(i), get_um_qual_datenumber(i));
+    }
     
+    
+    /*
      //this stuff is for testing. It reads out all the data files as numbers to standard out. Use with caution. 
      int linelimit = 20;
      int i;
@@ -275,6 +1858,6 @@ int main (int argc, char **argv)
      
     
     printf("%d\n", file_size("mu_all_datenumber_2bytes.bin"));
-     
+     */
     return 0;
 }
