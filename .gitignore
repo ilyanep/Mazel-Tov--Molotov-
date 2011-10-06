@@ -1,1 +1,11 @@
-.DS_Store
+*.DS_Store
+binary_files/data_files/*
+mu/all.dta
+mu/all.idx
+mu/example.dta
+mu/qual.dta
+um/all.dta
+um/all.idx
+um/example.dta
+um/qual.dta
+
