@@ -35,6 +35,5 @@ int main (int argc, char **argv)
                get_mu_qual_datenumber(i));
     }
     printf("\n\n\n");
-    fprintf(fopen("test.txt", "w"),"crap\n");
     return 0;
 }
