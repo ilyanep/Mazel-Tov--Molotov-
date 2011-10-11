@@ -13,6 +13,9 @@
 // In addition, some sort of internal state that notes whether Learn()
 // or Remember() have been called yet.
 
+#ifndef LEARNING_METHODS_H
+#define LEARNING_METHODS_H
+
 class IPredictor {
   public:
     virtual ~IPredictor() {}
@@ -22,15 +25,17 @@ class IPredictor {
     // Learning should be done on partitions 1 through partition, inclusive.
     // Make sure that whatever file is written has some sort of metadata
     // that says what partition was learned on.
-    virtual void Learn(int partition);
+    virtual void learn(int partition) = 0;
 
     // This method should read any residuals that are already written onto
     // disk to avoid re-learning. If the residuals cannot be found, it
     // will call Learn().
-    virtual void Remember(int partition);
+    virtual void remember(int partition) = 0;
 
     // This method should return a predicted rating based on existing
     // residuals. If the internal state indicates that the learning has not
     // occurred yet, Remember() should be called.
-    virtual double Predict(int user, int movie, int time);
+    virtual double predict(int user, int movie, int time) = 0;
 };
+
+#endif

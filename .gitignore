@@ -1,4 +1,5 @@
 *.DS_Store
+*.dta
 binary_files/data_files/*
 mu/all.dta
 mu/all.idx
@@ -9,3 +10,4 @@ um/all.idx
 um/example.dta
 um/qual.dta
 *.swp
+*.o

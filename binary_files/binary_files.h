@@ -4,6 +4,8 @@
 #define MU_DIRECTORY (string("../../mu"))   // the directory where the mu data is, relative to the data_files directory.
 #define UM_DIRECTORY (string("../../um"))   // the directory where the um data is, relative to the data_files directory.
 
+#ifndef BINARY_FILES_BINARY_FILES_H
+#define BINARY_FILES_BINARY_FILES_H
 
 /*
  * returns the current directory path, or the empty string if something went wrong.
@@ -766,3 +768,5 @@ int load_um_idx_ratingset();
  * returns the indexth rating set (1-5), or -1 in the event that something has gone wrong in the process of loading um_idx_ratingset_1byte.bin.
  */
 char get_um_idx_ratingset(int index);
+
+#endif
