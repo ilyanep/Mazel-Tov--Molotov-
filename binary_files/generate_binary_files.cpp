@@ -5,7 +5,6 @@ using namespace std;
 
 int main (int argc, char **argv)
 {
-    change_to_data_files_directory ();
     cout << "Now generating all of the binary files . . . \n";
     write_data_files_to_bin();
     int i;

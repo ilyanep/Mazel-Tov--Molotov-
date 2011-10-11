@@ -7,10 +7,10 @@
 #include <sys/stat.h>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 using namespace std;
 #include"binary_files.h"
 
-bool    already_in_data_files_directory = false; //set to true when directory is changed to that of the data files
 int   * mu_all_usernumber   = NULL; // array of the user id numbers in the same order as the mu/all.dta file. It's NULL if it hasn't been loaded.
 short * mu_all_movienumber  = NULL; // array of the movie id numbers in the same order as the mu/all.dta file. It's NULL if it hasn't been loaded.
 short * mu_all_datenumber   = NULL; // array of the date numbers in the same order as the mu/all.dta file. It's NULL if it hasn't been loaded.
@@ -28,23 +28,78 @@ int   * um_qual_usernumber  = NULL; // array of the user id numbers in the same 
 short * um_qual_movienumber = NULL; // array of the movie id numbers in the same order as the um/qual.dta file. It's NULL if it hasn't been loaded.
 short * um_qual_datenumber  = NULL; // array of the date numbers in the same order as the um/qual.dta file. It's NULL if it hasn't been loaded.
 
+
 /*
- * changes the current directory to the data files directory. It will create the directory, if necessary.
+ * returns the current directory path, or the empty string if something went wrong.
  */
-void change_to_data_files_directory ()
+string get_current_path()
 {
-    if (! already_in_data_files_directory)
+    
+    char cCurrentPath[FILENAME_MAX];
+    
+    if (!getcwd(cCurrentPath, sizeof(cCurrentPath)))
     {
-        while (chdir(DATA_FILES_DIRECTORY) != 0)
+        cerr << "Could not determine the current path.\n";
+        return string("");
+    }
+    return string(cCurrentPath);
+}
+
+
+/*
+ * changes the current directory to the data files directory. It will create the directory, if necessary. This should work as long
+ * as it is running out of some subdirectory within the project directory, and the project directory contains the binary_files
+ * directory, as well as the mu and um directories. 
+ *
+ * returns: the string representing the full path of the directory you used to be in
+ * It will return the empty string if it encounters a problem, like not being in the project directory anywhere. 
+ */
+string change_to_data_files_directory ()
+{
+    string start_directory = get_current_path();
+    string current_directory = start_directory;
+    size_t found = current_directory.find(PROJECT_PARENT_DIRECTORY);
+    
+    //prodede up the directory structure until we're in the project directory, or somethign has gone wrong
+    while (current_directory.length() > 0 && found != string::npos && int(found) != (current_directory.length() - PROJECT_PARENT_DIRECTORY.length()))
+    {
+        if (chdir("../") != 0)
         {
-            if (mkdir(DATA_FILES_DIRECTORY,0777) != 0)
-            {
-                cerr << "Could not create data files directory\n";
-                exit(EXIT_FAILURE);
-            }
+            cerr << "could not find project parent directory while going up directory structure.\n";
+            chdir(start_directory.c_str());
+            return string("");
+        }
+        found = current_directory.find(PROJECT_PARENT_DIRECTORY);
+        current_directory = get_current_path();
+    }
+    
+    // return empty string if something has gone wrong
+    if (current_directory.length()==0 || found == string::npos || int(found) != (current_directory.length() - PROJECT_PARENT_DIRECTORY.length()))
+    {
+        cerr << "I was unable to find the project parent directory.\n";
+        chdir(start_directory.c_str());
+        return string("");
+    }
+    
+    // enter binary files library directory
+    if (chdir(BINARY_FILES_LIBRARY_DIRECTORY.c_str()) != 0)
+    {
+        cerr << "could not find binary files project directory.\n";
+        chdir(start_directory.c_str());
+        return string("");
+    }
+    
+    // enter the data files directory, or create one if necessary 
+    while (chdir(DATA_FILES_DIRECTORY.c_str()) != 0)
+    {
+        if (mkdir(DATA_FILES_DIRECTORY.c_str(),0777) != 0)
+        {
+            cerr << "Could not create data files directory\n";
+            chdir(start_directory.c_str());
+            return string("");
         }
     }
-    already_in_data_files_directory = true;
+    return start_directory;
 }
 
 
@@ -70,8 +125,11 @@ int dta_to_bins(string inFile, string *outFiles, int *bytes_per_column, int num_
     }
     
     int i; //useful loop control variable.
-    
-    change_to_data_files_directory (); // enter the data files directory, where the binary files will be written. 
+    string start_directory = change_to_data_files_directory (); // enter the data files directory, where the binary files will be written. 
+    if (start_directory.length()==0)
+    {
+        return -1;
+    }
     
     ifstream inputFile (inFile.c_str()); //initialize input stream
     
@@ -108,7 +166,15 @@ int dta_to_bins(string inFile, string *outFiles, int *bytes_per_column, int num_
         
     } else { // if the file did not open, say so.
         cerr << "could not open "+inFile+"\n";
+        if (chdir(start_directory.c_str()) != 0)
+        {
+            cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+        }
         return -1;
+    }
+    if (chdir(start_directory.c_str()) != 0)
+    {
+        cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
     }
     return 0; // all went well, so return 0. 
 }
@@ -212,17 +278,29 @@ int write_data_files_to_bin()
  */
 int file_size(string filename)
 {
-    change_to_data_files_directory ();
+    string start_directory = change_to_data_files_directory (); // enter the data files directory, where the binary files will be written
+    if (start_directory.length() == 0)
+    {
+        return 0;
+    }
     FILE * inFile;
     inFile = fopen(filename.c_str(), "r");
     if (inFile == NULL)
     {
         cerr << ("could not judge the size of "+filename+".\n").c_str();
+        if (chdir(start_directory.c_str()) != 0)
+        {
+            cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+        }
         return 0;
     }
     fseek(inFile, 0, SEEK_END);
     int answer = ftell(inFile);
     fclose(inFile);
+    if (chdir(start_directory.c_str()) != 0)
+    {
+        cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+    }
     return answer;
 }
 
@@ -234,7 +312,11 @@ int file_size(string filename)
  */
 char *file_bytes(string filename)
 {
-    change_to_data_files_directory ();
+    string start_directory = change_to_data_files_directory (); // enter the data files directory, where the binary files will be written
+    if (start_directory.length()==0)
+    {
+        return NULL;
+    }
     int size = file_size(filename);
     if (size > 0)
     {
@@ -243,6 +325,10 @@ char *file_bytes(string filename)
         if (byte_array == NULL)
         {
             cerr << "malloc failed while trying to allocate " << size << " bytes for " << filename.c_str() << ".\n";
+            if (chdir(start_directory.c_str()) != 0)
+            {
+                cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+            }
             return NULL;
         }
         ifstream inFile;
@@ -252,12 +338,24 @@ char *file_bytes(string filename)
             inFile.read (byte_array, size);
         } else {
             cerr << ("could not read bytes of "+filename+".\n" ).c_str();
+            if (chdir(start_directory.c_str()) != 0)
+            {
+                cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+            }
             return  NULL;
         }
         inFile.close();
+        if (chdir(start_directory.c_str()) != 0)
+        {
+            cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+        }
         return byte_array;
     }
     cerr << ("could not read bytes of "+filename+", because size !> 0.\n").c_str();
+    if (chdir(start_directory.c_str()) != 0)
+    {
+        cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+    }
     return NULL;
 }
 

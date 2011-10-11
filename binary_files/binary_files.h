@@ -1,4 +1,6 @@
-#define DATA_FILES_DIRECTORY ("data_files") //the directory in which the binary data files live
+#define PROJECT_PARENT_DIRECTORY (string("Mazel-Tov--Molotov-")) // the project folder name
+#define BINARY_FILES_LIBRARY_DIRECTORY (string("binary_files")) // the directory containing this library, relative to the project folder
+#define DATA_FILES_DIRECTORY (string("data_files")) //the directory in which the binary data files live, relative to this library
 #define MU_DIRECTORY (string("../../mu"))   // the directory where the mu data is, relative to the data_files directory.
 #define UM_DIRECTORY (string("../../um"))   // the directory where the um data is, relative to the data_files directory.
 
@@ -6,9 +8,19 @@
 #define BINARY_FILES_BINARY_FILES_H
 
 /*
- * changes the current directory to the data files directory. It will create the directory, if necessary.
+ * returns the current directory path, or the empty string if something went wrong.
  */
-void change_to_data_files_directory ();
+string get_current_path();
+
+/*
+ * changes the current directory to the data files directory. It will create the directory, if necessary. This should work as long
+ * as it is running out of some subdirectory within the project directory, and the project directory contains the binary_files
+ * directory, as well as the mu and um directories. 
+ *
+ * returns: the string representing the full path of the directory you used to be in
+ * It will return the empty string if it encounters a problem, like not being in the project directory anywhere. 
+ */
+string change_to_data_files_directory ();
 
 /*
  * writes information from dta files to binary files. It assumes a dta file is composed of 
