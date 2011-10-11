@@ -1,4 +1,5 @@
 *.DS_Store
+*.dta
 binary_files/data_files/*
 mu/all.dta
 mu/all.idx
