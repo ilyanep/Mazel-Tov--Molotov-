@@ -7,7 +7,7 @@ int main (int argc, char **argv)
 {
     change_to_data_files_directory ();
     cout << "Now generating all of the binary files . . . \n";
-    //write_data_files_to_bin();
+    write_data_files_to_bin();
     int i;
     printf("UM:\nuser\tmovie\tdate\trating\tset\tqualU\tqualM\tqualD\n");
     for (i=0;i<20;i++)
