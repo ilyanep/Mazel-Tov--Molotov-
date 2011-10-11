@@ -1,2 +1,3 @@
-This directory will contain the main function to call to do the actual predicting as well as the function
-that will learn parameters for all blending of all parts.
+This directory will contain the linear aggregator function, which will call all the other predictors
+and then actually output the data. This directory will also contain the main function (the entry
+point for our prediction).
