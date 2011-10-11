@@ -2,7 +2,7 @@ This is a library to create, load, and use binary data files.
 
 It is important to set the definitions in binary_files.h to be the directories in which you actually want things to be. Currently, it expects this library to be in the binary_files directory, which contains the data_files directory (if it doesn't yet, this library makes one) and is a subdirectory in the same place as the mu and um directories. 
 
-It is important to note that when reading or writing data files, this library will run chdir(DATA_FILES_DIRECTORY), and set the global variable already_in_data_files_directory to true (it starts false).  At the moment, it relies on this to be able to make and find its files. 
+When reading or writing data files, this will change to the data file directory, but then it will change back. it will get lost if it is not in some subdirectory within the project directory folder. 
 
 binary_files.cpp contains a variety of useful functions, and sets several useful global variables. most notably:
 
