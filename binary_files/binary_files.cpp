@@ -271,6 +271,35 @@ int write_data_files_to_bin()
 
 
 /*
+ * returns whether or not a binary file of name filename exists in the DATA_FILES directory. 
+ */
+bool data_file_exists(string filename)
+{
+    string start_directory = change_to_data_files_directory (); // enter the data files directory, where the binary files will be written
+    if (start_directory.length() == 0)
+    {
+        return false ;
+    }
+    FILE * inFile;
+    inFile = fopen(filename.c_str(), "r");
+    if (inFile == NULL)
+    {
+        if (chdir(start_directory.c_str()) != 0)
+        {
+            cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+        }
+        return false ;
+    }
+    fclose(inFile);
+    if (chdir(start_directory.c_str()) != 0)
+    {
+        cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+    }
+    return true ; 
+}
+
+
+/*
  * returns the size of the file with the filename (relative to data_files directory) input (in bytes)
  * filename: the name of the file the size of which you want
  *
@@ -386,7 +415,7 @@ int force_load_mu_all_usernumber()
     free_mu_all_usernumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_all_usernumber_4bytes.bin", "r"))
+    if (! data_file_exists(string("mu_all_usernumber_4bytes.bin")))
     {
         if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
         {
@@ -478,7 +507,7 @@ int force_load_mu_all_movienumber()
     free_mu_all_movienumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_all_movienumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("mu_all_movienumber_2bytes.bin")))
     {
         if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
         {
@@ -572,7 +601,7 @@ int force_load_mu_all_datenumber()
     free_mu_all_datenumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_all_datenumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("mu_all_datenumber_2bytes.bin")))
     {
         if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
         {
@@ -665,7 +694,7 @@ int force_load_mu_all_rating()
     free_mu_all_rating();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_all_rating_1byte.bin", "r"))
+    if (! data_file_exists(string("mu_all_rating_1byte.bin")))
     {
         if (write_all_dta_to_bin(MU_DIRECTORY+"/all.dta", "mu_all") != 0)
         {
@@ -760,7 +789,7 @@ int force_load_mu_qual_usernumber()
     free_mu_qual_usernumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_qual_usernumber_4bytes.bin", "r"))
+    if (! data_file_exists(string("mu_qual_usernumber_4bytes.bin")))
     {
         if (write_qual_dta_to_bin(MU_DIRECTORY+"/qual.dta", "mu_qual") != 0)
         {
@@ -852,7 +881,7 @@ int force_load_mu_qual_movienumber()
     free_mu_qual_movienumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_qual_movienumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("mu_qual_movienumber_2bytes.bin")))
     {
         if (write_qual_dta_to_bin(MU_DIRECTORY+"/qual.dta", "mu_qual") != 0)
         {
@@ -946,7 +975,7 @@ int force_load_mu_qual_datenumber()
     free_mu_qual_datenumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_qual_datenumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("mu_qual_datenumber_2bytes.bin")))
     {
         if (write_qual_dta_to_bin(MU_DIRECTORY+"/qual.dta", "mu_qual") != 0)
         {
@@ -1047,7 +1076,7 @@ int force_load_mu_idx_ratingset()
     free_mu_idx_ratingset();
     
     // make sure we have a file to be reading from
-    if (! fopen("mu_idx_ratingset_1byte.bin", "r"))
+    if (! data_file_exists(string("mu_idx_ratingset_1byte.bin")))
     {
         if (write_idx_to_bin(MU_DIRECTORY+"/all.idx", "mu_idx") != 0)
         {
@@ -1140,7 +1169,7 @@ int force_load_um_all_usernumber()
     free_um_all_usernumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_all_usernumber_4bytes.bin", "r"))
+    if (! data_file_exists(string("um_all_usernumber_4bytes.bin")))
     {
         if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
         {
@@ -1232,7 +1261,7 @@ int force_load_um_all_movienumber()
     free_um_all_movienumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_all_movienumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("um_all_movienumber_2bytes.bin")))
     {
         if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
         {
@@ -1326,7 +1355,7 @@ int force_load_um_all_datenumber()
     free_um_all_datenumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_all_datenumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("um_all_datenumber_2bytes.bin")))
     {
         if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
         {
@@ -1419,7 +1448,7 @@ int force_load_um_all_rating()
     free_um_all_rating();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_all_rating_1byte.bin", "r"))
+    if (! data_file_exists(string("um_all_rating_1byte.bin")))
     {
         if (write_all_dta_to_bin(UM_DIRECTORY+"/all.dta", "um_all") != 0)
         {
@@ -1514,7 +1543,7 @@ int force_load_um_qual_usernumber()
     free_um_qual_usernumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_qual_usernumber_4bytes.bin", "r"))
+    if (! data_file_exists(string("um_qual_usernumber_4bytes.bin")))
     {
         if (write_qual_dta_to_bin(UM_DIRECTORY+"/qual.dta", "um_qual") != 0)
         {
@@ -1606,7 +1635,7 @@ int force_load_um_qual_movienumber()
     free_um_qual_movienumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_qual_movienumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("um_qual_movienumber_2bytes.bin")))
     {
         if (write_qual_dta_to_bin(UM_DIRECTORY+"/qual.dta", "um_qual") != 0)
         {
@@ -1700,7 +1729,7 @@ int force_load_um_qual_datenumber()
     free_um_qual_datenumber();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_qual_datenumber_2bytes.bin", "r"))
+    if (! data_file_exists(string("um_qual_datenumber_2bytes.bin")))
     {
         if (write_qual_dta_to_bin(UM_DIRECTORY+"/qual.dta", "um_qual") != 0)
         {
@@ -1801,7 +1830,7 @@ int force_load_um_idx_ratingset()
     free_um_idx_ratingset();
     
     // make sure we have a file to be reading from
-    if (! fopen("um_idx_ratingset_1byte.bin", "r"))
+    if (! data_file_exists(string("um_idx_ratingset_1byte.bin")))
     {
         if (write_idx_to_bin(UM_DIRECTORY+"/all.idx", "um_idx") != 0)
         {

@@ -78,6 +78,10 @@ int write_um_files_to_bin();
  */
 int write_data_files_to_bin();
 
+/*
+ * returns whether or not a file of name filename exists in the DATA_FILES directory. 
+ */
+bool data_file_exists(string filename);
 
 /*
  * returns the size of the file with the filename (relative to data_files directory) input (in bytes)
