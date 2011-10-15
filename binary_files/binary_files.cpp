@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string>
+#include <assert.h>
 #include <cstdlib>
 #include <unistd.h>
 using namespace std;
@@ -474,6 +475,7 @@ int get_mu_all_usernumber(int index)
         cerr << "cannot get mu_all_usernumber [" << index << "], because of errors loading mu_all_usernumber_4bytes.bin.\n";
         return -1;
     }
+    assert(index >=0 && index < 102416306);
     return mu_all_usernumber[index];
 }
 
@@ -566,6 +568,7 @@ short get_mu_all_movienumber(int index)
         cerr << "cannot get mu_all_movienumber [" << index << "], because of errors loading mu_all_movienumber_2bytes.bin.\n";
         return (short) (-1);
     }
+    assert(index >=0 && index < 102416306);
     return mu_all_movienumber[index];
 }
 
@@ -753,6 +756,7 @@ char get_mu_all_rating(int index)
         cerr << "cannot get mu_all_rating [" << index << "], because of errors loading mu_all_rating_1byte.bin.\n";
         return (char) (-1);
     }
+    assert(index >=0 && index < 102416306);
     return mu_all_rating[index];
 }
 
@@ -1135,6 +1139,7 @@ char get_mu_idx_ratingset(int index)
         cerr << "cannot get mu_idx_ratingset [" << index << "], because of errors loading mu_idx_ratingset_1byte.bin.\n";
         return (char) (-1);
     }
+    assert(index >=0 && index < 102416306);
     return mu_idx_ratingset[index];
 }
 
