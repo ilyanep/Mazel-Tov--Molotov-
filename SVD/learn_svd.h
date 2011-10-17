@@ -2,6 +2,9 @@
 #include "../learning_method.h"
 #include <string>
 
+#ifndef SVD_LEARN_SVD_H
+#define SVD_LEARN_SVD_H
+
 #define SVD_DIM 64 //Seems that only first 14 actually matter
 #define USER_COUNT 458293
 #define MOVIE_COUNT 17770
@@ -42,3 +45,4 @@ class SVD: public IPredictor{
       
     
 };
+#endif
