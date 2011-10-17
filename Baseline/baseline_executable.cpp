@@ -9,7 +9,7 @@ using namespace std;
 #include "../write_data/write_results.h"
 int main(int argc, char* argv[]) {
     if(argc != 2){
-        printf("Proper use is baseline_executable [--learn] [--output].\n");
+        printf("Proper use is baseline_executable [--learn] [--output] [--load].\n");
         exit(1);
     }
     printf("Creating predictor and loading data...\n");
@@ -17,9 +17,12 @@ int main(int argc, char* argv[]) {
     if(strcmp(argv[1], "--learn") == 0){
         printf("Learning dataset...\n");
         predictor.learn(3);
+    }else if(strcmp(argv[1], "--load") == 0){
+        printf("Loading baseline...\n");
+        predictor.remember(3);
     }else if(strcmp(argv[1], "--output") == 0){
-        printf("Learning dataset...\n");
-        predictor.learn(3);
+        printf("Loading baseline...\n");
+        predictor.remember(3);
         printf("Saving test predictions...\n");
         vector<double> results;
         //load qual data files (user,movie numbers) in mu order
@@ -35,6 +38,6 @@ int main(int argc, char* argv[]) {
     double RMSE = predictor.rmse_probe();
     printf("Probe RMSE: %f\n", RMSE);
     printf("Saving baseline parameters...\n");
-    predictor.remember(3);
+    predictor.save_baseline(3);
 }
 
