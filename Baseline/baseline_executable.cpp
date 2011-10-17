@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     printf("Calculating RMSE on probe...\n");
     double RMSE = predictor.rmse_probe();
     printf("Probe RMSE: %f\n", RMSE);
-    printf("Saving SVD parameters...\n");
+    printf("Saving baseline parameters...\n");
     predictor.remember(3);
 }
 
