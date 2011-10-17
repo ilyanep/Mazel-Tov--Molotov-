@@ -9,6 +9,7 @@
 #define AVG_RATING 3.6095 //Computed over the first 3 partitions
 
 //Global averages
+<<<<<<< HEAD
 #define REGUL_BIAS_MOVIE 25 //from BelKor
 #define REGUL_BIAS_USER 10 //from BelKor
 
@@ -17,6 +18,16 @@
 #define NUM_MOVIE_BINS 25 //from BelKor
 #define USER_DATE_EXP 4.7 //Optimized by hand
 #define USER_DATE_REGUL 2 //Optimized by hand
+=======
+#define REGUL_BIAS_MOVIE 25
+#define REGUL_BIAS_USER 10
+>>>>>>> 4313a1490d921d164629762aea4bd8454a48cae5
+
+//Time effects
+#define MOVIE_BIN_SIZE 90
+#define NUM_MOVIE_BINS 25
+#define USER_DATE_EXP 4 //5.1
+#define USER_DATE_REGUL 2
 
 #define BASELINE_FILE "mu_baseline.dta"
 
