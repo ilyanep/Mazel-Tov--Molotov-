@@ -22,10 +22,10 @@
 #define USER_DATE_REGUL 2 //Optimized by hand
 
 //Time effects
-#define MOVIE_BIN_SIZE 90
-#define NUM_MOVIE_BINS 25
-#define USER_DATE_EXP 4 //5.1
-#define USER_DATE_REGUL 2
+//#define MOVIE_BIN_SIZE 90
+//#define NUM_MOVIE_BINS 25
+//#define USER_DATE_EXP 4 //5.1
+//#define USER_DATE_REGUL 2
 
 #define BASELINE_FILE "mu_baseline.dta"
 
