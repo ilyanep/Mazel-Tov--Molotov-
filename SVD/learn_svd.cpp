@@ -102,7 +102,7 @@ void SVD::learn(int partition, bool refining){
             rmse = errsq / ((float)point_count);
             printf("\t\tEpoch %u: RMSE(in): %f; RMSE(out): %f\n", k, sqrt(rmse),rmse_probe());
         }
-        remember(3);
+        save_svd(3);
     }
 }
 
@@ -126,7 +126,7 @@ float SVD::learn_point(int svd_pt, int user, int movie, float rating, bool refin
     return err;
 }
 
-void SVD::remember(int partition){
+void SVD::save_svd(int partition){
     FILE *outFile;
     outFile = fopen(SVD_PARAM_FILE, "w");
     fprintf(outFile,"%u\n",partition);
@@ -145,17 +145,14 @@ void SVD::remember(int partition){
     return;
 }
 
-int SVD::load_svd(){
+void SVD::remember(int partition){
     FILE *inFile;
     inFile = fopen(SVD_PARAM_FILE, "r");
-    if(inFile == NULL)
-        return 1;
+    assert(inFile != NULL);
+    int temp;
     //printf("File opened.\n");
     float g = 0.0;
-    int partition;
-    fscanf(inFile,"%u",&partition);
-    if(partition == 0)
-        return 1;
+    fscanf(inFile,"%u",&temp);
     for(int user = 0; user < USER_COUNT; user++){
         for(int i = 0; i < SVD_DIM+1; i++) {
             fscanf(inFile, "%g", &g);
@@ -169,7 +166,7 @@ int SVD::load_svd(){
         }
     }
     fclose(inFile);
-    return 0;
+    return;
 
 }
 

@@ -107,6 +107,40 @@ string change_to_data_files_directory ()
 
 
 /*
+ * writes byte array to a binary file in the data files directory. 
+ * bytes:  the char * to be written
+ * length: the number of bytes to write
+ * ouFile: the name of the file to be written
+ *
+ * Returns 0 if all went well, -1 otherwise. 
+ */
+int array_to_file(char *bytes, int length, string outFile)
+{
+    
+    int i; //useful loop control variable.
+    string start_directory = change_to_data_files_directory (); // enter the data files directory, where the binary files will be written. 
+    if (start_directory.length()==0)
+    {
+        return -1;
+    }
+    //initialize output stream
+    ofstream outFileStream;
+    outFileStream.open(outFile.c_str(), ios::out | ios::binary);
+    //write bytes
+    outFileStream.write(bytes, length);    
+    //close output stream
+    outFileStream.close();
+    if (chdir(start_directory.c_str()) != 0)
+    {
+        cerr << "could not return to start directory of " << start_directory.c_str() << "\n";
+    }
+    return 0; // all went well, so return 0. 
+}
+
+
+
+
+/*
  * writes information from dta files to binary files. It assumes a dta file is composed of 
  * sets of integers in ascii seperated by whitespace. 
  * inFile:           string path of the dta file to be read, relative to data_files directory

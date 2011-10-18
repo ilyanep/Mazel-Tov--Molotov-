@@ -18,15 +18,10 @@ int main(int argc, char* argv[]) {
     //init=clock();
     if(strcmp(argv[1], "--load") == 0){
         printf("Loading SVD parameters...\n");
-        if(predictor.load_svd() == 1){
-            printf("Cannot load parameters, relearning...\n");
-            predictor.learn(3);
-        }
+        predictor.remember(3);
     }else if(strcmp(argv[1], "--refine") == 0){
         printf("Loading SVD parameters...\n");
-        if(predictor.load_svd() == 1){
-            printf("Cannot load parameters, relearning...\n");
-        }
+        predictor.remember(3);
         printf("Refining SVD parameters...\n");
         predictor.learn(3, true);
     }else if(strcmp(argv[1], "--learn") == 0){
@@ -34,10 +29,7 @@ int main(int argc, char* argv[]) {
         predictor.learn(3);
     }else if(strcmp(argv[1], "--output") == 0){
         printf("Loading SVD parameters...\n");
-        if(predictor.load_svd() == 1){
-            printf("Cannot load parameters, relearning...\n");
-            predictor.learn(3);
-        }
+        predictor.remember(3);
         printf("Saving test predictions...\n");
         vector<double> results;
         //load qual data files (user,movie numbers) in mu order
@@ -53,6 +45,6 @@ int main(int argc, char* argv[]) {
     double RMSE = predictor.rmse_probe();
     printf("Probe RMSE: %f\n", RMSE);
     printf("Saving SVD parameters...\n");
-    predictor.remember(3);
+    predictor.save_svd(3);
 }
 

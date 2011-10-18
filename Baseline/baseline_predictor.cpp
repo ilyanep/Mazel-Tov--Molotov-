@@ -8,10 +8,19 @@ using namespace std;
 
 Baseline::Baseline(){
     //Initially all matrix elements are set to 0.0
-    userBias = gsl_matrix_calloc(USER_COUNT, 3); //Extra dimension for
-    movieBias = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS); //computational stuff
+    userBias = gsl_matrix_calloc(USER_COUNT, 2); 
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS); 
     data_loaded = false;
     load_data();
+}
+
+Baseline::Baseline(bool loadedData){
+    //Initially all matrix elements are set to 0.0
+    userBias = gsl_matrix_calloc(USER_COUNT, 2); 
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS); 
+    data_loaded = loadedData;
+    if(!data_loaded)
+        load_data();
 }
 
 void Baseline::learn(int partition){
@@ -213,10 +222,11 @@ double Baseline::predict(int user, int movie, int time){
     return rating;
 }
 
-void Baseline::remember(int partition){
+void Baseline::save_baseline(int partition){
     FILE *outFile;
     outFile = fopen(BASELINE_FILE, "w");
     float bias, intercept, slope;
+    fprintf(outFile,"%u\n",partition); 
     for(int user = 0; user < USER_COUNT; user++){
         intercept = gsl_matrix_get(userBias, user, 0);
         slope = gsl_matrix_get(userBias, user, 1);
@@ -231,6 +241,31 @@ void Baseline::remember(int partition){
         fprintf(outFile,"\n");
     }
     fclose(outFile);
+    return;
+
+}
+
+
+void Baseline::remember(int partition){
+    FILE *inFile;
+    inFile = fopen(BASELINE_FILE, "r");
+    int load_partition;
+    fscanf(inFile,"%u",&load_partition);
+    assert(load_partition == partition);
+    float bias, intercept, slope;
+    for(int user = 0; user < USER_COUNT; user++){
+        fscanf(inFile,"%f",&intercept);
+        fscanf(inFile,"%f",&slope);
+        gsl_matrix_set(userBias, user, 0, intercept);
+        gsl_matrix_set(userBias, user, 1, slope);
+    }
+    for(int movie = 0; movie < MOVIE_COUNT; movie++){
+        for(int bin = 0; bin < NUM_MOVIE_BINS; bin++){
+            fscanf(inFile,"%f",&bias);
+            gsl_matrix_set(movieBias, movie, bin, bias);	
+        }
+    }
+    fclose(inFile);
     return;
 
 }

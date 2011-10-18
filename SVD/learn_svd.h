@@ -36,7 +36,7 @@ class SVD: public IPredictor{
         void load_data();
     public:
         SVD();
-        int load_svd();
+        void save_svd(int partition);
         float rmse_probe();
         void learn(int partition, bool refine);
         virtual void learn(int partition);

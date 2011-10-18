@@ -21,11 +21,8 @@
 #define USER_DATE_EXP 4.7 //Optimized by hand
 #define USER_DATE_REGUL 2 //Optimized by hand
 
-//Time effects
-//#define MOVIE_BIN_SIZE 90
-//#define NUM_MOVIE_BINS 25
-//#define USER_DATE_EXP 4 //5.1
-//#define USER_DATE_REGUL 2
+#define REGUL_BIAS_MOVIE 25
+#define REGUL_BIAS_USER 10
 
 #define BASELINE_FILE "mu_baseline.dta"
 
@@ -42,7 +39,9 @@ class Baseline: public IPredictor{
         void calculate_user_time_effects(int partition);
     public:
         Baseline();
+        Baseline(bool loadedData);
         float rmse_probe();
+        void save_baseline(int partition);
         virtual void learn(int partition);
         virtual double predict(int user, int movie, int time);
         virtual void remember(int partition);
