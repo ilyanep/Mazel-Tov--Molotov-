@@ -10,4 +10,5 @@ um/all.idx
 um/example.dta
 um/qual.dta
 *.swp
+*.swo
 *.o
