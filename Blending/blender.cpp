@@ -1,4 +1,6 @@
 #include "blender.h"
+#include <string>
+using namespace std;
 #include "../binary_files/binary_files.h"
 #include "../learning_method.h"
 #include <assert.h>
@@ -9,10 +11,9 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_permutation.h>
 
-using namespace std;
 
 #define ALL_POINTS_SIZE 102416306
-#define LEARNED_PARTITION 2 // The partition that all the predictors included learned on.
+#define LEARNED_PARTITION 3 // The partition that all the predictors included learned on.
 
 LinearBlender::LinearBlender(vector<IPredictor*> predictors) {
     predictors_ = predictors;
@@ -42,6 +43,7 @@ void LinearBlender::learn(int partition) {
     }
 
     // Fill predictions matrix
+    cout << "1" << endl;
     gsl_matrix * predictions_matrix = gsl_matrix_alloc(relevant_points_list.size(), predictors_.size());
     for(int64 i = 0; i < relevant_points_list.size(); ++i) {
         for(int j = 0; j < predictors_.size(); ++j) {
@@ -51,13 +53,13 @@ void LinearBlender::learn(int partition) {
                                                   get_mu_all_datenumber(relevant_points_list[i])));
         }
     }
-
+cout << "2" << endl;
     // Fill ratings vector
     gsl_vector * ratings_vector = gsl_vector_alloc(relevant_points_list.size());
     for(int64 i = 0; i < relevant_points_list.size(); ++i) {
         gsl_vector_set(ratings_vector, i, get_mu_all_rating(relevant_points_list[i]));
     }
-
+cout << "3" << endl;
     aggregator_weights_ = aggregator_solution(predictions_matrix, ratings_vector, relevant_points_list.size(),
                                               predictors_.size());
 
@@ -66,6 +68,7 @@ void LinearBlender::learn(int partition) {
 
 gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, gsl_vector* ratings_vector, 
                                                 int64 pred_points, int64 pred_num) {
+    
     // Solution is (G^T G)^-1 G^T r where G is predictions_matrix and r is ratings_vector
     gsl_matrix * gtrans_g = gsl_matrix_alloc(pred_num, pred_num);
     gsl_matrix * gtrans_g_inverse = gsl_matrix_alloc(pred_num, pred_num);
