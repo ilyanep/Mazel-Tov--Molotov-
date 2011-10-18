@@ -1,3 +1,0 @@
-This directory will contain the linear aggregator function, which will call all the other predictors
-and then actually output the data. This directory will also contain the main function (the entry
-point for our prediction).

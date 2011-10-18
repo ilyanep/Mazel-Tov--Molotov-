@@ -22,6 +22,23 @@ string get_current_path();
  */
 string change_to_data_files_directory ();
 
+
+
+
+
+/*
+ * writes byte array to a binary file in the data files directory. 
+ * bytes:  the char * to be written
+ * length: the number of bytes to write
+ * ouFile: the name of the file to be written
+ *
+ * Returns 0 if all went well, -1 otherwise. 
+ */
+int array_to_file(char *bytes, int length, string outFile);
+
+
+
+
 /*
  * writes information from dta files to binary files. It assumes a dta file is composed of 
  * sets of integers in ascii seperated by whitespace. 

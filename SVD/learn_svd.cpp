@@ -82,7 +82,7 @@ void SVD::learn(int partition, bool refining){
         float errsq;
         float rmse = 10.0;
         float oldrmse = 100.0;
-        while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT || k < min_epochs){
+        while(fabs(oldrmse - rmse) > MIN_RMSE_IMPROVEMENT || k < min_epochs){
         //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
             oldrmse = rmse;
             k++;

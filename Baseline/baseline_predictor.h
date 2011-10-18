@@ -2,6 +2,9 @@
 #include "../learning_method.h"
 #include <string>
 
+#ifndef BASELINE_BASELINE_PREDICTOR_H
+#define BASELINE_BASELINE_PREDICTOR_H
+
 #define USER_COUNT 458293
 #define MOVIE_COUNT 17770
 #define DATA_COUNT 102416306
@@ -9,7 +12,6 @@
 #define AVG_RATING 3.6095 //Computed over the first 3 partitions
 
 //Global averages
-
 #define REGUL_BIAS_MOVIE 25 //from BelKor
 #define REGUL_BIAS_USER 10 //from BelKor
 
@@ -46,3 +48,5 @@ class Baseline: public IPredictor{
       
     
 };
+
+#endif

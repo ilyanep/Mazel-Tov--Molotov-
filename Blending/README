@@ -1,0 +1,3 @@
+This is where the linear aggregator lives. To add a new predictor, you will need to edit the run_blender.cpp file to add it to the vector of predictors (make sure to include the correct header files) and then edit the makefile to make sure that the predictor gets linked. That should be it!
+
+The linear aggregator assumes that the predictors have all already learned and will only call the remember() function.
