@@ -1,9 +1,8 @@
+#ifndef BASELINE_BASELINE_PREDICTOR_H
+#define BASELINE_BASELINE_PREDICTOR_H
 #include <gsl/gsl_matrix.h>
 #include "../learning_method.h"
 #include <string>
-
-#ifndef BASELINE_BASELINE_PREDICTOR_H
-#define BASELINE_BASELINE_PREDICTOR_H
 
 #define USER_COUNT 458293
 #define MOVIE_COUNT 17770

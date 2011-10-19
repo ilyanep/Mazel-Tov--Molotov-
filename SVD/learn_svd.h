@@ -1,9 +1,9 @@
+#ifndef SVD_LEARN_SVD_H
+#define SVD_LEARN_SVD_H
+
 #include <gsl/gsl_matrix.h>
 #include "../learning_method.h"
 #include <string>
-
-#ifndef SVD_LEARN_SVD_H
-#define SVD_LEARN_SVD_H
 
 #define SVD_DIM 64 //Seems that only first 14 actually matter
 #define USER_COUNT 458293

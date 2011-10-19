@@ -1,11 +1,11 @@
+#ifndef BINARY_FILES_BINARY_FILES_H
+#define BINARY_FILES_BINARY_FILES_H
+
 #define PROJECT_PARENT_DIRECTORY (string("Mazel-Tov--Molotov-")) // the project folder name
 #define BINARY_FILES_LIBRARY_DIRECTORY (string("binary_files")) // the directory containing this library, relative to the project folder
 #define DATA_FILES_DIRECTORY (string("data_files")) //the directory in which the binary data files live, relative to this library
 #define MU_DIRECTORY (string("../../mu"))   // the directory where the mu data is, relative to the data_files directory.
 #define UM_DIRECTORY (string("../../um"))   // the directory where the um data is, relative to the data_files directory.
-
-#ifndef BINARY_FILES_BINARY_FILES_H
-#define BINARY_FILES_BINARY_FILES_H
 
 /*
  * returns the current directory path, or the empty string if something went wrong.

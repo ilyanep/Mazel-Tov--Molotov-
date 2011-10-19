@@ -1,7 +1,7 @@
-#include "../learning_method.h"
-
 #ifndef ALL_3_PREDICTOR_ALL_3_PREDICTOR_H
 #define ALL_3_PREDICTOR_ALL_3_PREDICTOR_H
+
+#include "../learning_method.h"
 
 class All3Predictor : public IPredictor {
   public:

@@ -1,3 +1,6 @@
+#ifndef BLENDING_BLENDER_H
+#define BLENDING_BLENDER_H
+
 // Linear aggregator class to linearly blend existing predictions
 #include "../learning_method.h"
 #include <gsl/gsl_blas.h>
@@ -5,9 +8,6 @@
 #include <vector>
 
 using namespace std;
-
-#ifndef BLENDING_BLENDER_H
-#define BLENDING_BLENDER_H
 
 typedef long long int64;
 
