@@ -18,8 +18,8 @@
 #define AVG_RATING 3.6095 //Computed over the first 3 partitions
 #define INIT_SVD_VAL 0.1 //Suggested optimal by a lot of papers
 
-#define SVD_PARAM_FILE "svd_params.dta"
-#define SVD_BIAS_FILE "svd_bias.dta"
+#define SVD_PARAM_FILE "../SVD/svd_params.dta"
+#define SVD_BIAS_FILE "../SVD/svd_bias.dta"
 
 #define SUBMIT_NUM_POINTS 2749898
 

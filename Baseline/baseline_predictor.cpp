@@ -249,6 +249,7 @@ void Baseline::save_baseline(int partition){
 void Baseline::remember(int partition){
     FILE *inFile;
     inFile = fopen(BASELINE_FILE, "r");
+    assert(inFile != NULL);
     int load_partition;
     fscanf(inFile,"%u",&load_partition);
     assert(load_partition == partition);

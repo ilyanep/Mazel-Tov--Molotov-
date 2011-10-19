@@ -149,10 +149,11 @@ void SVD::remember(int partition){
     FILE *inFile;
     inFile = fopen(SVD_PARAM_FILE, "r");
     assert(inFile != NULL);
-    int temp;
+    int load_partition;
     //printf("File opened.\n");
     float g = 0.0;
-    fscanf(inFile,"%u",&temp);
+    fscanf(inFile,"%u",&load_partition);
+    assert(load_partition == partition);
     for(int user = 0; user < USER_COUNT; user++){
         for(int i = 0; i < SVD_DIM+1; i++) {
             fscanf(inFile, "%g", &g);

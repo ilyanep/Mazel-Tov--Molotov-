@@ -24,7 +24,7 @@
 #define REGUL_BIAS_MOVIE 25
 #define REGUL_BIAS_USER 10
 
-#define BASELINE_FILE "mu_baseline.dta"
+#define BASELINE_FILE "../Baseline/mu_baseline.dta"
 
 #define SUBMIT_NUM_POINTS 2749898
 

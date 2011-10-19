@@ -2,13 +2,13 @@
 #include <assert.h>
 #include <vector>
 #include <iostream>
+#include <string>
+using namespace std;
 #include "../binary_files/binary_files.h"
 #include "../learning_method.h"
 #include "../write_data/write_results.h"
 #include "../SVD/learn_svd.h"
 #include "../Baseline/baseline_predictor.h"
-
-using namespace std;
 
 #define BLENDER_LEARNING_PARTITION 3
 #ifndef SUBMIT_NUM_POINTS
