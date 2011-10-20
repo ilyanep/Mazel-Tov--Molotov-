@@ -71,21 +71,17 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
     cout << "Calculating aggregator weights" << endl;
     
     // Solution is (G^T G)^-1 G^T r where G is predictions_matrix and r is ratings_vector
-    gsl_matrix * gtrans_g = gsl_matrix_alloc(pred_num, pred_num);
-    gsl_matrix * gtrans_g_inverse = gsl_matrix_alloc(pred_num, pred_num);
-    gsl_matrix * gtrans = gsl_matrix_alloc(pred_num, pred_points);
-    gsl_matrix * identity = gsl_matrix_alloc(pred_points, pred_points); 
-    gsl_matrix * gtrans_g_inverse_gtrans = gsl_matrix_alloc(pred_num, pred_points);
-    gsl_vector * final_vector = gsl_vector_alloc(pred_points);
 
     cout << "G^T G" << endl;
     // Calculate G^T G
+    gsl_matrix * gtrans_g = gsl_matrix_alloc(pred_num, pred_num);
     gsl_matrix_set_zero(gtrans_g);
     gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, predictions_matrix, predictions_matrix,
                    1.0, gtrans_g);
 
     cout << "(G^T G)^{-1}" << endl;
     // Inverse of G^T G
+    gsl_matrix * gtrans_g_inverse = gsl_matrix_alloc(pred_num, pred_num);
     gsl_permutation * p = gsl_permutation_alloc(pred_points);
     int *signum;
     *signum = 1; // Does anyone know what the hell this is?
@@ -95,12 +91,15 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
 
     cout << "G^T" << endl;
     // Get G^T
+    gsl_matrix * gtrans = gsl_matrix_alloc(pred_num, pred_points);
+    gsl_matrix * identity = gsl_matrix_alloc(pred_points, pred_points); 
     gsl_matrix_set_zero(gtrans);
     gsl_matrix_set_identity(identity);
     gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, predictions_matrix, identity, 1.0, gtrans);
 
     cout << "(G^T G)^-1 G^T" << endl;
    // Multiply (G^T G)^-1 G^T
+   gsl_matrix * gtrans_g_inverse_gtrans = gsl_matrix_alloc(pred_num, pred_points);
    gsl_matrix_set_zero(gtrans_g_inverse_gtrans);
    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, gtrans_g_inverse, gtrans, 1.0, gtrans_g_inverse_gtrans);
    gsl_matrix_free(gtrans_g_inverse);
@@ -108,6 +107,7 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
 
    cout << "Vector multiplication" << endl;
    // Do the vector multpilication 
+   gsl_vector * final_vector = gsl_vector_alloc(pred_points);
    gsl_vector_set_zero(final_vector);
    gsl_blas_dgemv(CblasNoTrans, 1.0, gtrans_g_inverse_gtrans, ratings_vector, 1.0, final_vector);
 
