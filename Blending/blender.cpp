@@ -11,7 +11,6 @@ using namespace std;
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_permutation.h>
 
-
 #define ALL_POINTS_SIZE 102416306
 #define LEARNED_PARTITION 3 // The partition that all the predictors included learned on.
 
@@ -82,36 +81,50 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
     cout << "(G^T G)^{-1}" << endl;
     // Inverse of G^T G
     gsl_matrix * gtrans_g_inverse = gsl_matrix_alloc(pred_num, pred_num);
-    gsl_permutation * p = gsl_permutation_alloc(pred_points);
+    gsl_permutation * p = gsl_permutation_alloc(pred_num);
     int *signum;
     *signum = 1; // Does anyone know what the hell this is?
     gsl_linalg_LU_decomp(gtrans_g, p, signum);
     gsl_linalg_LU_invert(gtrans_g, p, gtrans_g_inverse);
     gsl_matrix_free(gtrans_g);
 
-    cout << "G^T" << endl;
-    // Get G^T
-    gsl_matrix * gtrans = gsl_matrix_alloc(pred_num, pred_points);
+    // Manual multiplication to save memory
+    cout << "G^T r" << endl;
+    gsl_vector * gtrans_r_vector = gsl_vector_alloc(pred_num);
+    gsl_vector_set_zero(gtrans_r_vector); // Just in case
+    double current_sum = 0;
+    for(int i=0; i< pred_num; ++i) {
+        for(int64 j=0; j<pred_points; ++j) {
+            current_sum += gsl_vector_get(ratings_vector, j) * gsl_matrix_get(predictions_matrix, j, i);
+        }
+        gsl_vector_set(gtrans_r_vector, i, current_sum);
+        current_sum = 0;
+    }
+
+    // This old code to get G^T took up too much memory
+    /*gsl_matrix * gtrans = gsl_matrix_alloc(pred_num, pred_points);
     gsl_matrix * identity = gsl_matrix_alloc(pred_points, pred_points); 
     gsl_matrix_set_zero(gtrans);
     gsl_matrix_set_identity(identity);
-    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, predictions_matrix, identity, 1.0, gtrans);
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, predictions_matrix, identity, 1.0, gtrans); */
 
-    cout << "(G^T G)^-1 G^T" << endl;
-   // Multiply (G^T G)^-1 G^T
-   gsl_matrix * gtrans_g_inverse_gtrans = gsl_matrix_alloc(pred_num, pred_points);
-   gsl_matrix_set_zero(gtrans_g_inverse_gtrans);
-   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, gtrans_g_inverse, gtrans, 1.0, gtrans_g_inverse_gtrans);
-   gsl_matrix_free(gtrans_g_inverse);
-   gsl_matrix_free(gtrans);
+    /*cout << "(G^T G)^-1 G^T" << endl;
+    // Multiply (G^T G)^-1 G^T
+    gsl_matrix * gtrans_g_inverse_gtrans = gsl_matrix_alloc(pred_num, pred_points);
+    gsl_matrix_set_zero(gtrans_g_inverse_gtrans);
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, gtrans_g_inverse, gtrans, 1.0, gtrans_g_inverse_gtrans);
+    gsl_matrix_free(gtrans_g_inverse);
+    gsl_matrix_free(gtrans); */
 
-   cout << "Vector multiplication" << endl;
-   // Do the vector multpilication 
-   gsl_vector * final_vector = gsl_vector_alloc(pred_points);
-   gsl_vector_set_zero(final_vector);
-   gsl_blas_dgemv(CblasNoTrans, 1.0, gtrans_g_inverse_gtrans, ratings_vector, 1.0, final_vector);
-
-   return final_vector;
+    cout << "(G^T G)^-1 times that last thing" << endl;
+    // Do the vector multpilication 
+    gsl_vector * final_vector = gsl_vector_alloc(pred_num);
+    gsl_vector_set_zero(final_vector);
+    gsl_blas_dgemv(CblasNoTrans, 1.0, gtrans_g_inverse, g_trans_r_vector, 1.0, final_vector);
+    gsl_matrix_free(gtrans_g_inverse);
+    gsl_vector_free(g_trans_r_vector);
+ 
+    return final_vector;
 }
 
 // Saving results is for pussies (but mostly, I don't feel like implementing a check for each of the
