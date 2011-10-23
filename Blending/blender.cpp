@@ -122,7 +122,13 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
     gsl_blas_dgemv(CblasNoTrans, 1.0, gtrans_g_inverse, gtrans_r_vector, 1.0, final_vector);
     gsl_matrix_free(gtrans_g_inverse);
     gsl_vector_free(gtrans_r_vector);
- 
+
+    cout << "Final vector" << endl;
+    for(int i=0; i< pred_num; ++i) {
+        cout << gsl_vector_get(final_vector, i) << " ";
+    }
+    cout << endl;
+
     return final_vector;
 }
 
