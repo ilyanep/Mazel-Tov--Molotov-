@@ -82,9 +82,8 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
     // Inverse of G^T G
     gsl_matrix * gtrans_g_inverse = gsl_matrix_alloc(pred_num, pred_num);
     gsl_permutation * p = gsl_permutation_alloc(pred_num);
-    int *signum;
-    *signum = 1; // Does anyone know what the hell this is?
-    gsl_linalg_LU_decomp(gtrans_g, p, signum);
+    int signum = 1; // Does anyone know what the hell this is?
+    gsl_linalg_LU_decomp(gtrans_g, p, &signum);
     gsl_linalg_LU_invert(gtrans_g, p, gtrans_g_inverse);
     gsl_matrix_free(gtrans_g);
 
