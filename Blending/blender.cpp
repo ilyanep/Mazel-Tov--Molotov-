@@ -120,9 +120,9 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
     // Do the vector multpilication 
     gsl_vector * final_vector = gsl_vector_alloc(pred_num);
     gsl_vector_set_zero(final_vector);
-    gsl_blas_dgemv(CblasNoTrans, 1.0, gtrans_g_inverse, g_trans_r_vector, 1.0, final_vector);
+    gsl_blas_dgemv(CblasNoTrans, 1.0, gtrans_g_inverse, gtrans_r_vector, 1.0, final_vector);
     gsl_matrix_free(gtrans_g_inverse);
-    gsl_vector_free(g_trans_r_vector);
+    gsl_vector_free(gtrans_r_vector);
  
     return final_vector;
 }
