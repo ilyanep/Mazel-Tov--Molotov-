@@ -20,7 +20,8 @@ Baseline::Baseline(){
 
 Baseline::Baseline(bool loadedData){
     //Initially all matrix elements are set to 0.0
-    userBias = gsl_matrix_calloc(USER_COUNT, 2); 
+    userBias = gsl_matrix_calloc(USER_COUNT, 3 + NUM_USER_TIME_FACTORS * 2);
+    //userBias = gsl_matrix_calloc(USER_COUNT, 2); 
     movieBias = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS); 
     data_loaded = loadedData;
     if(!data_loaded)
