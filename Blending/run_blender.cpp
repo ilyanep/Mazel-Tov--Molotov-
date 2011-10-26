@@ -7,8 +7,9 @@ using namespace std;
 #include "../binary_files/binary_files.h"
 #include "../learning_method.h"
 #include "../write_data/write_results.h"
-#include "../SVD/learn_svd.h"
-#include "../Baseline/baseline_predictor.h"
+#include "../SVD_Oct18/svd_oct18.h"
+#include "../SVD_Oct25/svd_oct25.h"
+#include "../Baseline_Oct25/baseline_oct25.h"
 
 #define BLENDER_LEARNING_PARTITION 3
 #ifndef SUBMIT_NUM_POINTS
@@ -25,10 +26,12 @@ int main() {
     // Initialize all the predictors
     cout << "Initializing predictor vector" << endl;
     vector<IPredictor*> predictor_vector;
-    SVD svd_predictor; // Oh god that's a terrible class name :P
-    predictor_vector.push_back(&svd_predictor);
-    Baseline baseline_predictor; // Wow.
-    predictor_vector.push_back(&baseline_predictor);
+    Oct18_SVD svd_oct18;
+    Oct25_SVD svd_oct25;
+	Oct25_Baseline baseline_oct25;
+    predictor_vector.push_back(&svd_oct18);
+    predictor_vector.push_back(&svd_oct25);
+    predictor_vector.push_back(&baseline_oct25);
 
     // Initialize your mom
     cout << "Loarning linear blender" << endl;

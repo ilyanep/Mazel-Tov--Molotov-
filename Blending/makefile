@@ -1,5 +1,5 @@
-run_blender: run_blender.o blender.o ../write_data/write_results.o ../binary_files/binary_files.o ../SVD/learn_svd.o ../Baseline/baseline_predictor.o
-	g++ -lgsl -lgslcblas -lm run_blender.o blender.o ../write_data/write_results.o ../binary_files/binary_files.o ../SVD/learn_svd.o ../Baseline/baseline_predictor.o -o run_blender
+run_blender: run_blender.o blender.o ../write_data/write_results.o ../binary_files/binary_files.o ../SVD_Oct18/svd_oct18.o ../SVD_Oct25/svd_oct25.o ../Baseline_Oct25/baseline_oct25.o
+	g++ -lgsl -lgslcblas -lm run_blender.o blender.o ../write_data/write_results.o ../binary_files/binary_files.o ../SVD_Oct18/svd_oct18.o ../SVD_Oct25/svd_oct25.o ../Baseline_Oct25/baseline_oct25.o -o run_blender
 
 run_blender.o: run_blender.cpp 
 	g++ -lgsl -lgslcblas -lm -c run_blender.cpp
