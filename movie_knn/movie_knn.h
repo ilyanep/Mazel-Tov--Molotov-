@@ -6,8 +6,8 @@ protected:
     static int num_movies;
     static int num_users;
     static int num_ratings;
-    static int *movie_start_indexes;
-    static int *user_start_indexes;
+    static int movie_start_indexes[17772];
+    static int user_start_indexes[458295];
     int learned_partition;
     
     void initiate();
@@ -49,7 +49,7 @@ protected:
     int generate_rhos(int partition);
     double rho(int movie_i, int movie_j, int partition);
 public:
-    //  an undecessary but usefull function if something is changed and you 
+    //  an unnecessary but usefull function if something is changed and you 
     //  want to make sure the rho values stored are still correct:
     //virtual void probabalistic_check(int partition);
     

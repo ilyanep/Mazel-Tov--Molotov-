@@ -8,11 +8,15 @@ using namespace std;
 int main (int argc, char **argv)
 {
     Movie_Knn_Pearson m;
+    Movie_Knn_Pearson n;
     m.learn(1);
+    n.learn(1);
     double rating_sum = 0.0;
     double error;
     int size_of_partition_two = 0;
-    for (int i=0; i < 102416306; i++)
+    int i=1;
+    printf("m: %f, n: %f, rating = %d\n", m.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i)), n.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i)),get_mu_all_rating(i));
+    /*for (int i=0; i < 102416306; i++)
     {
         if (get_mu_idx_ratingset(i) == char( 2))
         {
@@ -25,5 +29,6 @@ int main (int argc, char **argv)
             size_of_partition_two++;
         }
     }
-    printf("rmse on partition 2 is %f\n",sqrt(rating_sum/float(size_of_partition_two)));
+    printf("rmse on partition 2 is %f\n",sqrt(rating_sum/float(size_of_partition_two)));*/
+    return 0;
 }
