@@ -43,13 +43,13 @@ void SVD::learn(int partition, bool refining){
     /* Load bias parameters */
     FILE *inFile;
     inFile = fopen(SVD_BIAS_FILE, "r");
-    float bias;
+    double bias;
     for(int i = 0; i < USER_COUNT; i++){
-        fscanf(inFile, "%g", &bias);
+        fscanf(inFile, "%lf", &bias);
         gsl_matrix_set(userSVD, i, SVD_DIM, bias);
     }
 	for(int i = 0; i < MOVIE_COUNT; i++){
-        fscanf(inFile, "%g", &bias);
+        fscanf(inFile, "%lf", &bias);
         gsl_matrix_set(movieSVD, SVD_DIM, i, bias);
     }
     fclose(inFile);
@@ -57,14 +57,15 @@ void SVD::learn(int partition, bool refining){
     /* Choose points randomly */
    // for(int k = 0; k < DATA_COUNT * LEARN_EPOCHS; k++){
    //     if(k % DATA_COUNT == 0){
-   //         printf("\tLearning ... %u percent \n", (int)((float)(k+1)*100.0/((float)(DATA_COUNT * LEARN_EPOCHS))));
+   //         printf("\tLearning ... %u percent \n", (int)((double)(k+1)*100.0/((double)(DATA_COUNT * LEARN_EPOCHS))));
    //     }
    //     int i = rand() % DATA_COUNT;
 
     int param_start = 0;
     int min_epochs = LEARN_EPOCHS_MIN;
-    float init_value = INIT_SVD_VAL;
+    double init_value = INIT_SVD_VAL;
     if(refining){
+		printf("Refining...\n");
         int svd_pt = 0;
         while(svd_pt < SVD_DIM && gsl_matrix_get(userSVD, 0, svd_pt) != init_value){
             svd_pt++;
@@ -75,13 +76,13 @@ void SVD::learn(int partition, bool refining){
     }
     /* Cycle through dataset */
     for(int p = param_start; p < SVD_DIM; p++){
-        printf("\tParameter %u: Learning... %u percent.\n", p+1, (int)((float)(p+1)*100.0/(float)SVD_DIM));
+        printf("\tParameter %u: Learning... %u percent.\n", p+1, (int)((double)(p+1)*100.0/(double)SVD_DIM));
         int k = 0;
         int point_count;
-        float err;
-        float errsq;
-        float rmse = 10.0;
-        float oldrmse = 100.0;
+        double err;
+        double errsq;
+        double rmse = 10.0;
+        double oldrmse = 100.0;
         while(fabs(oldrmse - rmse) > MIN_RMSE_IMPROVEMENT || k < min_epochs){
         //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
             oldrmse = rmse;
@@ -99,23 +100,23 @@ void SVD::learn(int partition, bool refining){
                     }
                 }
             }
-            rmse = errsq / ((float)point_count);
-            printf("\t\tEpoch %u: RMSE(in): %f; RMSE(out): %f\n", k, sqrt(rmse),rmse_probe());
+            rmse = errsq / ((double)point_count);
+            printf("\t\tEpoch %u: RMSE(in): %lf; RMSE(out): %lf\n", k, sqrt(rmse),rmse_probe());
         }
         save_svd(3);
     }
 }
 
-float SVD::learn_point(int svd_pt, int user, int movie, float rating, bool refining){
+double SVD::learn_point(int svd_pt, int user, int movie, double rating, bool refining){
     if(rating == 0)
         return -999;
-    float err;
+    double err;
     if(refining)
         err = rating - predict_point(user, movie);
     else
 	    err = rating - predict_point_train(user, movie, svd_pt);
-    float svd_user_old = gsl_matrix_get(userSVD, user, svd_pt); 
-    float svd_movie_old = gsl_matrix_get(movieSVD, svd_pt, movie); 
+    double svd_user_old = gsl_matrix_get(userSVD, user, svd_pt); 
+    double svd_movie_old = gsl_matrix_get(movieSVD, svd_pt, movie); 
 
 	gsl_matrix_set(userSVD, user, svd_pt, svd_user_old + 
                   (learn_rate * (err * svd_movie_old -
@@ -132,13 +133,13 @@ void SVD::save_svd(int partition){
     fprintf(outFile,"%u\n",partition);
     for(int user = 0; user < USER_COUNT; user++){
         for(int i = 0; i < SVD_DIM+1; i++) {
-            fprintf(outFile,"%f ",gsl_matrix_get(userSVD, user, i)); 
+            fprintf(outFile,"%lf ",gsl_matrix_get(userSVD, user, i)); 
         }
         fprintf(outFile,"\n");
     }
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
         for(int i = 0; i < SVD_DIM+1; i++) {
-            fprintf(outFile,"%f ",gsl_matrix_get(movieSVD, i, movie));
+            fprintf(outFile,"%lf ",gsl_matrix_get(movieSVD, i, movie));
         }
     }
     fclose(outFile);
@@ -151,18 +152,18 @@ void SVD::remember(int partition){
     assert(inFile != NULL);
     int load_partition;
     //printf("File opened.\n");
-    float g = 0.0;
+    double g = 0.0;
     fscanf(inFile,"%u",&load_partition);
     assert(load_partition == partition);
     for(int user = 0; user < USER_COUNT; user++){
         for(int i = 0; i < SVD_DIM+1; i++) {
-            fscanf(inFile, "%g", &g);
+            fscanf(inFile, "%lf", &g);
             gsl_matrix_set(userSVD, user, i, g);
 	    }
     }
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
         for(int i = 0; i < SVD_DIM+1; i++) {
-            fscanf(inFile, "%g", &g);
+            fscanf(inFile, "%lf", &g);
             gsl_matrix_set(movieSVD, i, movie, g);
         }
     }
@@ -185,7 +186,7 @@ double SVD::predict(int user, int movie, int time){
     return rating;
 }
 
-float SVD::rmse_probe(){
+double SVD::rmse_probe(){
     double RMSE = 0.0;
     int count = 0;
     for(int i = 0; i < DATA_COUNT; i++) {
@@ -201,8 +202,8 @@ float SVD::rmse_probe(){
     return RMSE;
 }   
 
-float SVD::predict_point(int user, int movie){
-    float rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
+double SVD::predict_point(int user, int movie){
+    double rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
                    gsl_matrix_get(movieSVD, SVD_DIM, movie);
     for (int i = 0; i < SVD_DIM; i++){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 
@@ -211,8 +212,8 @@ float SVD::predict_point(int user, int movie){
     return rating;
 }
 
-float SVD::predict_point_train(int user, int movie, int svd_pt){
-    float rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
+double SVD::predict_point_train(int user, int movie, int svd_pt){
+    double rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
                    gsl_matrix_get(movieSVD, SVD_DIM, movie);
     for (int i = 0; i <= svd_pt; i++){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 

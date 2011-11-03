@@ -9,9 +9,10 @@ using namespace std;
 #include "../write_data/write_results.h"
 #include "../SVD_Oct18/svd_oct18.h"
 #include "../SVD_Oct25/svd_oct25.h"
+#include "../SVD/learn_svd.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
 
-#define BLENDER_LEARNING_PARTITION 3
+#define BLENDER_LEARNING_PARTITION 4
 #ifndef SUBMIT_NUM_POINTS
 #define SUBMIT_NUM_POINTS 2749898
 #endif
@@ -29,9 +30,11 @@ int main() {
     Oct18_SVD svd_oct18;
     Oct25_SVD svd_oct25;
 	Oct25_Baseline baseline_oct25;
+    SVD svd_nov3;
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
     predictor_vector.push_back(&baseline_oct25);
+    predictor_vector.push_back(&svd_nov3);
 
     // Initialize your mom
     cout << "Loarning linear blender" << endl;

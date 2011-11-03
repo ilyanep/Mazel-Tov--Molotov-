@@ -1,3 +1,6 @@
+#ifndef SVD_SVD_OCT25_H
+#define SVD_SVD_OCT25_H
+
 #include <gsl/gsl_matrix.h>
 #include "../learning_method.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
@@ -42,3 +45,4 @@ class Oct25_SVD: public IPredictor{
       
     
 };
+#endif
