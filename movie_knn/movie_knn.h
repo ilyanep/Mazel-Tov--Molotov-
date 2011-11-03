@@ -47,9 +47,12 @@ protected:
     static double *rhos;
     int force_generate_rhos(int partition);
     int generate_rhos(int partition);
+    double rho(int movie_i, int movie_j, int partition);
 public:
+    //  an undecessary but usefull function if something is changed and you 
+    //  want to make sure the rho values stored are still correct:
+    //virtual void probabalistic_check(int partition);
     
-    virtual double rho(int movie_i, int movie_j, int partition);
     Movie_Knn_Pearson();
     // This method should use the data to learn whatever technique this class
     // is using and then write whatever residuals it calculates to a file
