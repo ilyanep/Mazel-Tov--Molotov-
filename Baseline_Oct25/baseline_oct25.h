@@ -4,37 +4,32 @@
 #include "../learning_method.h"
 #include <string>
 
-#define USER_COUNT 458293
-#define MOVIE_COUNT 17770
-#define DATA_COUNT 102416306
-#define DATE_COUNT 2243
-#define AVG_RATING 3.6095 //Computed over the first 3 partitions
-
-//Gradient descent
-#define GRAD_STEP 0.001
-#define DERIV_STEP 0.1
-#define GRAD_MIN_IMPROVEMENT 0.0001
+#define OCT25_USER_COUNT 458293
+#define OCT25_MOVIE_COUNT 17770
+#define OCT25_DATA_COUNT 102416306
+#define OCT25_DATE_COUNT 2243
+#define OCT25_AVG_RATING 3.6095 //Computed over the first 3 partitions
 
 //Global averages
-#define REGUL_BIAS_MOVIE 25 //from BelKor
-#define REGUL_BIAS_USER 10 //from BelKor
+#define OCT25_REGUL_BIAS_MOVIE 25 //from BelKor
+#define OCT25_REGUL_BIAS_USER 10 //from BelKor
 
 //Time effects
-#define MOVIE_BIN_SIZE 90 //from BelKor
-#define NUM_MOVIE_BINS 25 //from BelKor
-#define USER_DATE_EXP 0.01 //Optimized by hand 0.01
-#define NUM_USER_TIME_FACTORS 40  //from BelKor
-#define USER_FREQ_REGUL 3
-#define USER_DATE_REGUL 50 //Optimized by hand 50
+#define OCT25_MOVIE_BIN_SIZE 90 //from BelKor
+#define OCT25_NUM_MOVIE_BINS 25 //from BelKor
+#define OCT25_USER_DATE_EXP 0.01 //Optimized by hand 0.01
+#define OCT25_NUM_USER_TIME_FACTORS 40  //from BelKor
+#define OCT25_USER_FREQ_REGUL 3
+#define OCT25_USER_DATE_REGUL 50 //Optimized by hand 50
 
-#define REGUL_BIAS_MOVIE 25
-#define REGUL_BIAS_USER 10
+#define OCT25_REGUL_BIAS_MOVIE 25
+#define OCT25_REGUL_BIAS_USER 10
 
-#define BASELINE_FILE "../Baseline/mu_baseline.dta"
+#define OCT25_BASELINE_FILE "../Baseline_Oct25/mu_baseline.dta"
 
-#define SUBMIT_NUM_POINTS 2749898
+#define OCT25_SUBMIT_NUM_POINTS 2749898
 
-class Baseline: public IPredictor{
+class Oct25_Baseline: public IPredictor{
     private:
         bool data_loaded;
         gsl_matrix *userBias;
@@ -53,8 +48,8 @@ class Baseline: public IPredictor{
         void refine_by_gradient_descent(int partition);
         */
     public:
-        Baseline();
-        Baseline(bool loadedData);
+        Oct25_Baseline();
+        Oct25_Baseline(bool loadedData);
         double rmse_probe();
         void save_baseline(int partition);
         virtual void learn(int partition);
