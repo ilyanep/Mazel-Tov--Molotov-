@@ -16,31 +16,30 @@ using namespace std;
 
 // Class Movie_Knn
 //   protected:
-int Movie_Knn::num_movies = 17770;            // The number of movies involved
-int Movie_Knn::num_users = 458293;            // The number of users involved
-int Movie_Knn::num_ratings = 102416306;       // The total number of ratings ever
-int Movie_Knn::movie_start_indexes[17772];    // This will become the array: [movie_id] -> start index in mu_all
-                                              //    note that here we use movie_start_indexes[0] as an indicator. -1 indicates 
-                                              //    the array has not yet been set, while 0 indicates it has. Movie indicees 
-                                              //    start at 1, so this is not actually connected to actual movie indicees.
-                                              //    note also that in order to make edge cases easier, 
-                                              //        movie_start_indexes[1771]=num_ratings
-                
-int Movie_Knn::user_start_indexes[458295];    // This will become the array: [ user_id] -> start index in um_all
-                                              //    note that here we use movie_start_indexes[0] as an indicator. -1 indicates 
-                                              //    the array has not yet been set, while 0 indicates it has. User indicees 
-                                              //    start at 1, so this is not actually connected to actual user indicees. 
-                                              //    note also that in order to make edge cases easier, 
-                                              //        user_start_indexes[458294]=num_ratings
+int Movie_Knn::num_movies = 17770;                // The number of movies involved
+int Movie_Knn::num_users = 458293;                // The number of users involved
+int Movie_Knn::num_ratings = 102416306;           // The total number of ratings ever
+
+int Movie_Knn::movie_start_indexes[17772] = {-1}; // This will become the array: [movie_id] -> start index in mu_all
+                                                  //    note that here we use movie_start_indexes[0] as an indicator. -1 indicates 
+                                                  //    the array has not yet been set, while 0 indicates it has. Movie indicees 
+                                                  //    start at 1, so this is not actually connected to actual movie indicees.
+                                                  //    note also that in order to make edge cases easier, 
+                                                  //        movie_start_indexes[1771]=num_ratings
+
+int Movie_Knn::user_start_indexes[458295] = {-1}; // This will become the array: [ user_id] -> start index in um_all
+                                                  //    note that here we use movie_start_indexes[0] as an indicator. -1 indicates 
+                                                  //    the array has not yet been set, while 0 indicates it has. User indicees 
+                                                  //    start at 1, so this is not actually connected to actual user indicees. 
+                                                  //    note also that in order to make edge cases easier, 
+                                                  //        user_start_indexes[458294]=num_ratings
 
 /*
  * Initiate an instance of this class. 
- * Sets the 0 entries of the index arrays to -1, as well as the learned_partition (1). 
+ * Sets the learned_partition to default (1)
  */
 void Movie_Knn::initiate()
 {
-    user_start_indexes[0] = -1;
-    movie_start_indexes[0] = -1;
     learned_partition   = 1;
 }
 
@@ -354,8 +353,9 @@ double Movie_Knn::predict(int user, int movie, int time)
 //Class Movie_Knn_Pearson
 //  protected:
 
-double *Movie_Knn_Pearson::rhos = NULL; // This shall be the set of all calculated rho values, 
-                                        // which will be stored on the heap, since it's huge. 
+double *Movie_Knn_Pearson::rhos[5] = {NULL,NULL,NULL,NULL,NULL};// This shall be the set of all calculated rho values, 
+                                                                // which will be stored on the heap, since it's huge.
+                                                                // Note that there is a set of rhos for each trainable partition. 
 
 
 
@@ -396,9 +396,9 @@ double Movie_Knn_Pearson::rho(int movie_i, int movie_j, int partition)
     //Note that since rho(i,j,p) == rho(j,i,p), we can save space in the stored array like this:
     if (movie_i > movie_j)
     {
-        answer =  rhos[(((movie_i*movie_i)-(3*movie_i))/2) + movie_j];
+        answer =  rhos[partition][(((movie_i*movie_i)-(3*movie_i))/2) + movie_j];
     } else {
-        answer =  rhos[(((movie_j*movie_j)-(3*movie_j))/2) + movie_i];
+        answer =  rhos[partition][(((movie_j*movie_j)-(3*movie_j))/2) + movie_i];
     }
     
     if (isnan(answer))
@@ -418,27 +418,47 @@ double Movie_Knn_Pearson::rho(int movie_i, int movie_j, int partition)
 
 
 /*
- * OK boys and Girls, this is the most computationally intense part of Movie_Knn_Pearson.
+ * OK boys and girls, this is the most computationally intense part of Movie_Knn_Pearson.
  * we're going to calculate correlation coefficients for all of the pairs of movies. 
  *
  * In order to store all pairs (note that it doesn't matter which order you pair the movies, 
- * e.g. rho(i,j,p) == rho(j,i,p)), we are going to initiate (on the heap) the rhos array,
- * and store all the rhos in it. Note that the rho for movie 
+ * e.g. rho(i,j,p) == rho(j,i,p)), we are going to initiate (on the heap) the rhos[partition]
+ * array, and store all the rhos in it (for this partition), with each rho(i,j,p), where i>j, 
+ * being stored at rhos[partition][(i^2 - 3i)/2 + j], and we don't store rho(i,i,p), since that's
+ * just 1. 
+ *
+ * partition : the partition to learn these rhos with (1-4)
+ *
+ * return : 0 on success, -1 otherwise.
  */
 int Movie_Knn_Pearson::force_generate_rhos(int partition)
 {
-    if (!(rhos == NULL))
+    // If you're asking to force generate rhos for a partition that cannot be trained, fail.
+    if (partition < 1 || partition > 4)
     {
-        free(rhos);
+        cerr << "cannot train rhos on partition " << partition << "\n";
+        return -1;
     }
+    
+    // If there are already entries at this rhos[partition] array, clear them.
+    if (!(rhos[partition] == NULL))
+    {
+        free(rhos[partition]);
+    }
+    
+    // Generate the name of the file in which these rhos ought to be stored. 
     stringstream ss;
     ss << partition;
-    
     string filename = string("Movie_KNN_rhos_pearson_partition_")+ ss.str()+string(".bin");
+    
+    // If this data file exists and is complete (all the rhos have been generated), load them up.
     if (data_file_exists(filename) && file_size(filename) == sizeof(double) * (((num_movies - 1)*num_movies)/2))
     {
-        rhos = (double *) file_bytes(filename);
+        rhos[partition] = (double *) file_bytes(filename);
+        
+    // If the data file does not exist or is incomplete, let's get ready to generate!
     } else {
+        // If the data file exists, and so it's not done yet, load it up, and remember how big it is
         int start_index = 0;
         double *old_rhos = NULL;
         if (data_file_exists(filename))
@@ -446,12 +466,20 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
             start_index = (file_size(filename))/sizeof(double);
             old_rhos = (double *) file_bytes(filename);
         }
-        rhos = (double *) malloc(sizeof(double) * (((num_movies - 1)*num_movies)/2));
-        if (rhos == NULL)
+        
+        // Allocate some memory for the new, complete array of rhos
+        rhos[partition] = (double *) malloc(sizeof(double) * (((num_movies - 1)*num_movies)/2));
+        if (rhos[partition] == NULL)
         {
             cerr << "could not allocate memory for the rhos\n";
             return -1;
         }
+        
+        // For each pair of movies, fill in that the rho for that pair:
+        // rhos[partition][(i^2 - 3i)/2 + j] = covariance(x_i,x_j),
+        // where x_i and x_j are the sets of ratings of movies i and j, where 
+        // for all l, x_i[l] and x_j[l] are by the same user.
+        // see BigChaos for details, or wikipedia's Pearson article. 
         int ell;
         char x_ij[num_users * 2];
         double average_x_i;
@@ -461,7 +489,7 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
         double denominator_i;
         double denominator_j;
         int index = 0;
-        int progress_counter = 0;
+        int progress_counter = 0; // the progress_counter and _index stuff is just to print out progress.
         int progress_index = 0;
         int sum_x_i;
         int sum_x_j;
@@ -471,15 +499,17 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
         {
             for (int j=1; j<i; j++)
             {
-                if (index < start_index)
+                if (index < start_index) // if this is still in the set of pre-stored rhos, use that.
                 {
-                    rhos[index] = old_rhos[index];
+                    rhos[partition][index] = old_rhos[index];
                 } else {
-                    if (index == start_index)
+                    if (index == start_index) // if we've just finished the set of pre-stored rhos, clear that.
                     {
                         free(old_rhos);
                         old_rhos = NULL;
                     }
+                    
+                    // Otherwise, let the Pearson Correlation calculation begin!
                     ell = rating_pairs(x_ij, i, j, partition);
                     if (ell > 1)
                     {
@@ -505,11 +535,13 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
                             denominator_i += pow((x_ij_i- average_x_i),2);
                             denominator_j += pow((x_ij_j- average_x_j),2);
                         }
-                        rhos[index] = (numerator / sqrt(denominator_i * denominator_j));
+                        rhos[partition][index] = (numerator / sqrt(denominator_i * denominator_j));
                     } else {
-                        rhos[index] = 0.0;
+                        rhos[partition][index] = 0.0;
                     }
                 }
+                
+                // This stuff is just to print out progress, and store your progress every 1% of the way. 
                 if (progress_index == 1579)
                 {
                     printf("now %d / 100000 complete calculating the rhos.\n", progress_counter);
@@ -517,26 +549,17 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
                     progress_counter ++;
                     if ((progress_counter % 1000 == 0) && (index > start_index))
                     {
-                        array_to_file((char *)rhos, sizeof(double) * index, filename); // every 1%, write to file
+                        array_to_file((char *)rhos[partition], sizeof(double) * index, filename); // every 1%, write to file
                     }
                 }
                 index ++;
                 progress_index++;
-                /*
-                printf("%d users rated both movie %d and %d\n", ell, i, j);
-                printf("they rated them {");
-                for (l=0;l<ell;l++)
-                {
-                    printf("(%d,%d),",x_ij[2*l],x_ij[2*l + 1]);
-                }
-                printf("}\n");
-                printf("the average of movie %d was %f, and of %d was %f\n", i, average_x_i, j, average_x_j);
-                printf(" and so the rho is %f / sqrt(%f * %f)\n", numerator, denominator_i, denominator_j); 
-                printf("and so, the rho between %d and %d is %f\n", i, j, numerator / sqrt(denominator_i * denominator_j));*/
             }
         }
-        free(old_rhos);
-        return array_to_file((char *)rhos, sizeof(double) * (((num_movies - 1)*num_movies)/2), filename);
+        free(old_rhos); // make sure to clear all the old rhos from the pre-stored file, if that exists. 
+        
+        // store the calculated rhos values in their file, return the success of that operation. 
+        return array_to_file((char *)rhos[partition], sizeof(double) * (((num_movies - 1)*num_movies)/2), filename);
     }
     return 0;
 }
@@ -611,9 +634,16 @@ void Movie_Knn_Pearson::probabalistic_check(int partition)
     }
 }*/
 
+/*
+ * If there are no rhos stored yet for this partition (in memory), this will load and/or generate those rhos. 
+ *
+ * partition : the partition to learn these rhos with (1-4)
+ *
+ * return : 0 on success, -1 otherwise.
+ */
 int Movie_Knn_Pearson::generate_rhos(int partition)
 {
-    if (rhos == NULL)
+    if (rhos[partition] == NULL)
     {
         return force_generate_rhos(partition);
     }
@@ -623,12 +653,24 @@ int Movie_Knn_Pearson::generate_rhos(int partition)
 
 
 //  public:
+
+/*
+ * Movie_Knn_Pearson Constructor. Takes no arguments, just calls initiate(), to initiate 
+ * the defaults and whatnot. 
+ */
 Movie_Knn_Pearson::Movie_Knn_Pearson()
 {
-    //rhos = NULL;
     initiate();
 }
 
+/*
+ * sets the learned partition (the partition this object is expected to have "learned.")
+ * 
+ * clears any previously generated rhos (Pearson movie/movie correlation values) for 
+ * this partition from memory, and loads the saved values in (or creates them if they don't exist). 
+ *
+ * partition: the partition to learn
+ */
 void  Movie_Knn_Pearson::learn(int partition)
 {
     learned_partition = partition;
@@ -638,7 +680,13 @@ void  Movie_Knn_Pearson::learn(int partition)
     }
 }
 
-
+/*
+ * sets the learned partition (the partition this object is expected to have "learned.")
+ *
+ * loads the rhos (Pearson movie/movie correlation values) for this partition into memory. 
+ * (and generates and saves them if they don't yet exist)
+ *
+ */
 void  Movie_Knn_Pearson::remember(int partition)
 {
     learned_partition = partition;
