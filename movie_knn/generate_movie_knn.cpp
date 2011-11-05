@@ -2,7 +2,7 @@
 #include <fstream>
 #include <math.h>
 using namespace std;
-#include"movie_knn.h"
+#include"movie_knn_pearson.h"
 #include "../binary_files/binary_files.h"
 
 //This doesn't do much that's useful. It just tests very basic "this doesn't crash" functionality. 
