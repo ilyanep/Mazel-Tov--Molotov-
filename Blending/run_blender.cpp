@@ -11,7 +11,7 @@ using namespace std;
 #include "../SVD_Oct25/svd_oct25.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
 
-#define BLENDER_LEARNING_PARTITION 3
+#define BLENDER_LEARNING_PARTITION 4
 #ifndef SUBMIT_NUM_POINTS
 #define SUBMIT_NUM_POINTS 2749898
 #endif
