@@ -1,3 +1,5 @@
+#ifndef MOVIE_KNN_MOVIE_KNN_H
+#define MOVIE_KNN_MOVIE_KNN_H
 #include "../learning_method.h"
 
 class Movie_Knn: public IPredictor
@@ -169,4 +171,4 @@ public:
 };
 
 
-
+#endif
