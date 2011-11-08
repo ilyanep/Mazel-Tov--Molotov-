@@ -9,6 +9,7 @@ using namespace std;
 #include "../learning_method.h"
 #include "../write_data/write_results.h"
 #include "../SVD_Oct18/svd_oct18.h"
+#include "../SVD_Nov2/svd_nov2.h"
 #include "../SVD/learn_svd.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
 #include "../movie_knn/movie_knn_pearson.h"
@@ -35,11 +36,11 @@ int main() {
     Oct18_SVD svd_oct18 ;
     //Oct25_SVD svd_oct25 ;
 	Oct25_Baseline baseline_oct25;
-    SVD svd_nov3;
+    SVD_Nov2 svd_nov2;
     predictor_vector.push_back(&svd_oct18);
     //predictor_vector.push_back(&svd_oct25);
     predictor_vector.push_back(&baseline_oct25);
-    predictor_vector.push_back(&svd_nov3);
+    predictor_vector.push_back(&svd_nov2);
     predictor_vector.push_back(&mknn);
     predictor_vector.push_back(&mknn_pearson);
 
