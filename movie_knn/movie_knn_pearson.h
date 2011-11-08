@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 #ifndef MOVIE_KNN_MOVIE_KNN_PEARSON_H
 #define MOVIE_KNN_MOVIE_KNN_PEARSON_H
+=======
+#ifndef MOVIE_KNN_PEARSON_CLASS_H
+#define MOVIE_KNN_PEARSON_CLASS_H
+
+>>>>>>> eb01d36a9226c050a430afa38b1136c5f1d12f7b
 #include "movie_knn.h"
 
 
@@ -84,4 +90,9 @@ public:
      */
     virtual void remember(int partition);
 };
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> eb01d36a9226c050a430afa38b1136c5f1d12f7b
 #endif

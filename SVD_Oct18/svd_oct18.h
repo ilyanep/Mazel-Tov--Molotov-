@@ -1,5 +1,5 @@
-#ifndef SVD_LEARN_SVD_H
-#define SVD_LEARN_SVD_H
+#ifndef SVD_SVD_OCT18_H
+#define SVD_SVD_OCT18_H
 
 #include <gsl/gsl_matrix.h>
 #include "../learning_method.h"

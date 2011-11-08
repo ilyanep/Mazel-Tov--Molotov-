@@ -2,7 +2,7 @@
 #include <string>
 using namespace std;
 #include "../binary_files/binary_files.h"
-#include "../learning_method.h"
+#include "../movie_knn/movie_knn.h"
 #include <assert.h>
 #include <vector>
 #include <iostream>
