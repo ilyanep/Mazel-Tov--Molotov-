@@ -1,3 +1,6 @@
+#ifndef MOVIE_KNN_CLASS_H
+#define MOVIE_KNN_CLASS_H
+
 #include "../learning_method.h"
 
 class Movie_Knn: public IPredictor
@@ -168,5 +171,5 @@ public:
     virtual double predict(int user, int movie, int time);
 };
 
-
+#endif
 
