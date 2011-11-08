@@ -12,6 +12,8 @@ using namespace std;
 #include "../SVD/learn_svd.h"
 #include "../movie_knn/movie_knn.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
+#include "../movie_knn/movie_knn_pearson.h"
+#include "../learning_method.h"
 
 #define BLENDER_LEARNING_PARTITION 4
 #ifndef SUBMIT_NUM_POINTS
@@ -32,13 +34,13 @@ int main() {
     Oct25_SVD svd_oct25;
 	Oct25_Baseline baseline_oct25;
     SVD svd_nov3;
-    //Movie_Knn mknn;
+    Movie_Knn mknn;
     Movie_Knn_Pearson mknn_pearson;
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
     predictor_vector.push_back(&baseline_oct25);
     predictor_vector.push_back(&svd_nov3);
-    //predictor_vector.push_back(&mknn);
+    predictor_vector.push_back(&mknn);
     predictor_vector.push_back(&mknn_pearson);
 
     // Initialize your mom
