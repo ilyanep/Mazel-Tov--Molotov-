@@ -4,16 +4,14 @@
 #include <iostream>
 #include <string>
 using namespace std;
+//#include "../SVD_Oct25/svd_oct25.h"
 #include "../binary_files/binary_files.h"
 #include "../learning_method.h"
 #include "../write_data/write_results.h"
 #include "../SVD_Oct18/svd_oct18.h"
-#include "../SVD_Oct25/svd_oct25.h"
 #include "../SVD/learn_svd.h"
-#include "../movie_knn/movie_knn.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
 #include "../movie_knn/movie_knn_pearson.h"
-#include "../learning_method.h"
 
 #define BLENDER_LEARNING_PARTITION 4
 #ifndef SUBMIT_NUM_POINTS
@@ -30,14 +28,16 @@ int main() {
     // Initialize all the predictors
     cout << "Initializing predictor vector" << endl;
     vector<IPredictor*> predictor_vector;
-    Oct18_SVD svd_oct18;
-    Oct25_SVD svd_oct25;
-	Oct25_Baseline baseline_oct25;
-    SVD svd_nov3;
+    
     Movie_Knn mknn;
     Movie_Knn_Pearson mknn_pearson;
+    
+    Oct18_SVD svd_oct18 ;
+    //Oct25_SVD svd_oct25 ;
+	Oct25_Baseline baseline_oct25;
+    SVD svd_nov3;
     predictor_vector.push_back(&svd_oct18);
-    predictor_vector.push_back(&svd_oct25);
+    //predictor_vector.push_back(&svd_oct25);
     predictor_vector.push_back(&baseline_oct25);
     predictor_vector.push_back(&svd_nov3);
     predictor_vector.push_back(&mknn);

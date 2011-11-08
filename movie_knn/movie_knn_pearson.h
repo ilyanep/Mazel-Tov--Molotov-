@@ -1,3 +1,6 @@
+#ifndef MOVIE_KNN_PEARSON_CLASS_H
+#define MOVIE_KNN_PEARSON_CLASS_H
+
 #include "movie_knn.h"
 
 
@@ -83,3 +86,5 @@ public:
     virtual void remember(int partition);
 };
 
+
+#endif
