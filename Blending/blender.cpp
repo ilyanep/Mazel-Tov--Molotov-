@@ -12,7 +12,7 @@ using namespace std;
 #include <gsl/gsl_permutation.h>
 
 #define ALL_POINTS_SIZE 102416306
-#define LEARNED_PARTITION 1 // The partition that all the predictors included learned on.
+#define LEARNED_PARTITION 3 // The partition that all the predictors included learned on.
 
 LinearBlender::LinearBlender(vector<IPredictor*> predictors) {
     predictors_ = predictors;
