@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 using namespace std;
-//#include "../SVD_Oct25/svd_oct25.h"
+#include "../all_3_predictor/all_3_predictor.h"
 #include "../binary_files/binary_files.h"
 #include "../learning_method.h"
 #include "../write_data/write_results.h"
@@ -33,11 +33,12 @@ int main() {
     
     Movie_Knn mknn;
     Movie_Knn_Pearson mknn_pearson;
-    
-    Oct18_SVD svd_oct18 ;
-    SVD_Oct25 svd_oct25 ;
+    All3Predictor all_3s; 
+    Oct18_SVD svd_oct18;
+    SVD_Oct25 svd_oct25;
 	Oct25_Baseline baseline_oct25;
     SVD_Nov2 svd_nov2;
+    predictor_vector.push_back(&all_3s);
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
     predictor_vector.push_back(&baseline_oct25);
