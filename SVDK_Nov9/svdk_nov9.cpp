@@ -28,7 +28,6 @@ SVDK_Nov9::SVDK_Nov9(){
     }
     data_loaded = false;
     learn_rate = LEARN_RATE;
-    svd_regul = REGUL_PARAM;
     load_data();
     srand(time(NULL));
 }
@@ -83,6 +82,8 @@ void SVDK_Nov9::learn(int partition, bool refining){
         double errsq;
         double rmse = 10.0;
         double oldrmse = 100.0;
+        if(p == SVD_DIM/2)
+            min_epochs = min_epochs / 2;
         while(fabs(oldrmse - rmse) > MIN_RMSE_IMPROVEMENT || k < min_epochs){
         //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
             oldrmse = rmse;
@@ -93,7 +94,7 @@ void SVDK_Nov9::learn(int partition, bool refining){
                 if(get_mu_idx_ratingset(i) <= partition){
                     err = learn_point(p, get_mu_all_usernumber(i)-1,
                                          get_mu_all_movienumber(i)-1,
-                                         get_mu_all_rating(i)-AVG_RATING, refining);
+                                         get_mu_all_rating(i), refining);
                     if(err != -999){
                         errsq = errsq + err * err;
                         point_count++;
@@ -110,20 +111,30 @@ void SVDK_Nov9::learn(int partition, bool refining){
 double SVDK_Nov9::learn_point(int svd_pt, int user, int movie, double rating, bool refining){
     if(rating == 0)
         return -999;
+    //Figure out current error on this point and modify feature parameters
     double err;
     if(refining)
         err = rating - predict_point(user, movie);
     else
 	    err = rating - predict_point_train(user, movie, svd_pt);
     double svd_user_old = gsl_matrix_get(userSVD, user, svd_pt); 
-    double svd_movie_old = gsl_matrix_get(movieSVD, svd_pt, movie); 
+    double svd_movie_old = gsl_matrix_get(movieSVD, svd_pt, movie);
 
 	gsl_matrix_set(userSVD, user, svd_pt, svd_user_old + 
                   (learn_rate * (err * svd_movie_old -
-                  svd_regul * svd_user_old)));
+                  FEATURE_REGUL_PARAM * svd_user_old)));
 	gsl_matrix_set(movieSVD, svd_pt, movie, svd_movie_old +
                   (learn_rate * (err * svd_user_old -
-                  svd_regul * svd_movie_old)));
+                  FEATURE_REGUL_PARAM * svd_movie_old)));
+
+    //Update user and movie biases for this point
+    double bias_user_old = gsl_matrix_get(userSVD, user, SVD_DIM); 
+    double bias_movie_old = gsl_matrix_get(movieSVD, SVD_DIM, movie); 
+    double bias_change = learn_rate * (rating - 
+                         BIAS_REGUL_PARAM * (bias_user_old + bias_movie_old - AVG_RATING));
+                 
+    gsl_matrix_set(userSVD, user, SVD_DIM, bias_user_old + bias_change);
+	gsl_matrix_set(movieSVD, SVD_DIM, movie, bias_movie_old + bias_change);
     return err;
 }
 
@@ -209,10 +220,10 @@ double SVDK_Nov9::predict_point(int user, int movie){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 
                   gsl_matrix_get(movieSVD, i, movie);
     }
-    if(rating < (1.0 - AVG_RATING))
-        return (1.0 - AVG_RATING);
-    else if(rating > (5.0 - AVG_RATING))
-        return (5.0 - AVG_RATING);
+    if(rating < 1.0)
+        return 1.0;
+    else if(rating > 5.0)
+        return 5.0;
     return rating;
 }
 
@@ -224,10 +235,10 @@ double SVDK_Nov9::predict_point_train(int user, int movie, int svd_pt){
                   gsl_matrix_get(movieSVD, i, movie);
     }
     rating = rating + INIT_SVD_VAL * INIT_SVD_VAL * (SVD_DIM - svd_pt -1);
-    if(rating < (1.0 - AVG_RATING))
-        return (1.0 - AVG_RATING);
-    else if(rating > (5.0 - AVG_RATING))
-        return (5.0 - AVG_RATING);
+    if(rating < 1.0)
+        return 1.0;
+    else if(rating > 5.0)
+        return 5.0;
     return rating;
 }
             
