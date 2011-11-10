@@ -96,7 +96,7 @@ void SVDK_Nov9::learn(int partition, bool refining){
                 if(get_mu_idx_ratingset(i) <= partition){
                     err = learn_point(p, get_mu_all_usernumber(i)-1,
                                          get_mu_all_movienumber(i)-1,
-                                         get_mu_all_rating(i)-AVG_RATING, refining);
+                                         (double)get_mu_all_rating(i) - AVG_RATING, refining);
                     if(err != -999){
                         errsq = errsq + err * err;
                         point_count++;
@@ -131,9 +131,8 @@ double SVDK_Nov9::learn_point(int svd_pt, int user, int movie, double rating, bo
 
     //Update user and movie biases for this point
     double bias_user_old = gsl_matrix_get(userSVD, user, SVD_DIM+1); 
-    double bias_movie_old = gsl_matrix_get(movieSVD, SVD_DIM+1, movie); 
-    double bias_change = learn_rate * (rating - 
-                         BIAS_REGUL_PARAM * (bias_user_old + bias_movie_old - AVG_RATING));
+    double bias_movie_old = gsl_matrix_get(movieSVD, SVD_DIM+1, movie);
+    double bias_change = learn_rate * (err - BIAS_REGUL_PARAM * (bias_user_old + bias_movie_old));
                  
     gsl_matrix_set(userSVD, user, SVD_DIM+1, bias_user_old + bias_change);
 	gsl_matrix_set(movieSVD, SVD_DIM+1, movie, bias_movie_old + bias_change);
@@ -195,7 +194,7 @@ void SVDK_Nov9::load_data(){
 }
 
 double SVDK_Nov9::predict(int user, int movie, int time){
-    double rating = AVG_RATING + predict_point(user-1, movie-1);
+    double rating = predict_point(user-1, movie-1);
     return rating;
 }
 
