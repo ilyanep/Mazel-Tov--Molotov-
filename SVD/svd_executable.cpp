@@ -1,5 +1,5 @@
 #include <string.h>
-#include "learn_svd.h"
+#include "svd.h"
 #include <math.h>
 #include <assert.h>
 //#include <time.h>
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
         //load qual data files (user,movie numbers) in mu order
         assert(load_mu_qual_usernumber() == 0);
         assert(load_mu_qual_movienumber() == 0);
-        for(int i=0; i < SUBMIT_NUM_POINTS; i++) {
+        for(int i=0; i < SVD::SUBMIT_NUM_POINTS; i++) {
             results.push_back(predictor.predict(get_mu_qual_usernumber(i),
                                            (int)get_mu_qual_movienumber(i),0));
         }
