@@ -193,7 +193,7 @@ void SVDK_Nov9::load_data(){
 }
 
 double SVDK_Nov9::predict(int user, int movie, int time){
-    double rating = AVG_RATING + (double)predict_point(user-1, movie-1);
+    double rating = predict_point(user-1, movie-1);
     return rating;
 }
 
