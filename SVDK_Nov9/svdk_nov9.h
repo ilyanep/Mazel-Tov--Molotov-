@@ -5,8 +5,8 @@
 #include "../learning_method.h"
 #include <string>
 
-#define NOV9_SVDK_PARAM_FILE "../SVD/svd_params.dta"
-#define NOV9_SVDK_BIAS_FILE "../SVD/svd_bias.dta"
+#define NOV9_SVDK_PARAM_FILE "../SVDK_Nov9/svd_params.dta"
+#define NOV9_SVDK_BIAS_FILE "../SVDK_Nov9/svd_bias.dta"
 
 class SVDK_Nov9: public IPredictor{
     private:
