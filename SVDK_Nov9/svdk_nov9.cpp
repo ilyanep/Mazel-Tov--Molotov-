@@ -14,15 +14,15 @@ using namespace std;
 
 SVDK_Nov9::SVDK_Nov9(){
     //Initially all matrix elements are set to 0.1
-    userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+1);
-    movieSVD = gsl_matrix_calloc(SVD_DIM+1, MOVIE_COUNT);
+    userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+2);
+    movieSVD = gsl_matrix_calloc(SVD_DIM+2, MOVIE_COUNT);
     for(int i = 0; i < USER_COUNT; i++){
-        for(int p = 0; p < SVD_DIM+1; p++){
+        for(int p = 0; p < SVD_DIM+2; p++){
             gsl_matrix_set(userSVD, i, p, INIT_SVD_VAL);
         }
     }
 	for(int i = 0; i < MOVIE_COUNT; i++){
-        for(int p = 0; p < SVD_DIM+1; p++){
+        for(int p = 0; p < SVD_DIM+2; p++){
             gsl_matrix_set(movieSVD, p, i, INIT_SVD_VAL);
         }
     }
@@ -40,6 +40,7 @@ void SVDK_Nov9::learn(int partition, bool refining){
     assert(data_loaded);
 
     /* Load bias parameters */
+        
     FILE *inFile;
     inFile = fopen(NOV9_SVDK_BIAS_FILE, "r");
     double bias;
@@ -52,6 +53,7 @@ void SVDK_Nov9::learn(int partition, bool refining){
         gsl_matrix_set(movieSVD, SVD_DIM, i, bias);
     }
     fclose(inFile);
+    
 
     /* Choose points randomly */
    // for(int k = 0; k < DATA_COUNT * LEARN_EPOCHS; k++){
@@ -82,8 +84,8 @@ void SVDK_Nov9::learn(int partition, bool refining){
         double errsq;
         double rmse = 10.0;
         double oldrmse = 100.0;
-        if(p == SVD_DIM/2)
-            min_epochs = min_epochs / 2;
+        if(p == SVD_DIM/3)
+            min_epochs = min_epochs / 3;
         while(fabs(oldrmse - rmse) > MIN_RMSE_IMPROVEMENT || k < min_epochs){
         //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
             oldrmse = rmse;
@@ -94,7 +96,7 @@ void SVDK_Nov9::learn(int partition, bool refining){
                 if(get_mu_idx_ratingset(i) <= partition){
                     err = learn_point(p, get_mu_all_usernumber(i)-1,
                                          get_mu_all_movienumber(i)-1,
-                                         get_mu_all_rating(i), refining);
+                                         get_mu_all_rating(i)-AVG_RATING, refining);
                     if(err != -999){
                         errsq = errsq + err * err;
                         point_count++;
@@ -128,13 +130,13 @@ double SVDK_Nov9::learn_point(int svd_pt, int user, int movie, double rating, bo
                   FEATURE_REGUL_PARAM * svd_movie_old)));
 
     //Update user and movie biases for this point
-    double bias_user_old = gsl_matrix_get(userSVD, user, SVD_DIM); 
-    double bias_movie_old = gsl_matrix_get(movieSVD, SVD_DIM, movie); 
+    double bias_user_old = gsl_matrix_get(userSVD, user, SVD_DIM+1); 
+    double bias_movie_old = gsl_matrix_get(movieSVD, SVD_DIM+1, movie); 
     double bias_change = learn_rate * (rating - 
                          BIAS_REGUL_PARAM * (bias_user_old + bias_movie_old - AVG_RATING));
                  
-    gsl_matrix_set(userSVD, user, SVD_DIM, bias_user_old + bias_change);
-	gsl_matrix_set(movieSVD, SVD_DIM, movie, bias_movie_old + bias_change);
+    gsl_matrix_set(userSVD, user, SVD_DIM+1, bias_user_old + bias_change);
+	gsl_matrix_set(movieSVD, SVD_DIM+1, movie, bias_movie_old + bias_change);
     return err;
 }
 
@@ -143,13 +145,13 @@ void SVDK_Nov9::save_svd(int partition){
     outFile = fopen(NOV9_SVDK_PARAM_FILE, "w");
     fprintf(outFile,"%u\n",partition);
     for(int user = 0; user < USER_COUNT; user++){
-        for(int i = 0; i < SVD_DIM+1; i++) {
+        for(int i = 0; i < SVD_DIM+2; i++) {
             fprintf(outFile,"%lf ",gsl_matrix_get(userSVD, user, i)); 
         }
         fprintf(outFile,"\n");
     }
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
-        for(int i = 0; i < SVD_DIM+1; i++) {
+        for(int i = 0; i < SVD_DIM+2; i++) {
             fprintf(outFile,"%lf ",gsl_matrix_get(movieSVD, i, movie));
         }
     }
@@ -167,13 +169,13 @@ void SVDK_Nov9::remember(int partition){
     fscanf(inFile,"%u",&load_partition);
     assert(load_partition == partition);
     for(int user = 0; user < USER_COUNT; user++){
-        for(int i = 0; i < SVD_DIM+1; i++) {
+        for(int i = 0; i < SVD_DIM+2; i++) {
             fscanf(inFile, "%lf", &g);
             gsl_matrix_set(userSVD, user, i, g);
 	    }
     }
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
-        for(int i = 0; i < SVD_DIM+1; i++) {
+        for(int i = 0; i < SVD_DIM+2; i++) {
             fscanf(inFile, "%lf", &g);
             gsl_matrix_set(movieSVD, i, movie, g);
         }
@@ -193,7 +195,7 @@ void SVDK_Nov9::load_data(){
 }
 
 double SVDK_Nov9::predict(int user, int movie, int time){
-    double rating = predict_point(user-1, movie-1);
+    double rating = AVG_RATING + predict_point(user-1, movie-1);
     return rating;
 }
 
@@ -215,7 +217,9 @@ double SVDK_Nov9::rmse_probe(){
 
 double SVDK_Nov9::predict_point(int user, int movie){
     double rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
-                   gsl_matrix_get(movieSVD, SVD_DIM, movie);
+                   gsl_matrix_get(movieSVD, SVD_DIM, movie) +
+                    gsl_matrix_get(userSVD, user, SVD_DIM+1) +
+                   gsl_matrix_get(movieSVD, SVD_DIM+1, movie);
     for (int i = 0; i < SVD_DIM; i++){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 
                   gsl_matrix_get(movieSVD, i, movie);
@@ -229,7 +233,9 @@ double SVDK_Nov9::predict_point(int user, int movie){
 
 double SVDK_Nov9::predict_point_train(int user, int movie, int svd_pt){
     double rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
-                   gsl_matrix_get(movieSVD, SVD_DIM, movie);
+                   gsl_matrix_get(movieSVD, SVD_DIM, movie) +
+                    gsl_matrix_get(userSVD, user, SVD_DIM+1) +
+                   gsl_matrix_get(movieSVD, SVD_DIM+1, movie);
     for (int i = 0; i <= svd_pt; i++){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 
                   gsl_matrix_get(movieSVD, i, movie);
