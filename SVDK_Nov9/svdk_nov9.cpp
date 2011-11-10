@@ -132,10 +132,9 @@ double SVDK_Nov9::learn_point(int svd_pt, int user, int movie, double rating, bo
     //Update user and movie biases for this point
     double bias_user_old = gsl_matrix_get(userSVD, user, SVD_DIM+1); 
     double bias_movie_old = gsl_matrix_get(movieSVD, SVD_DIM+1, movie);
-    double bias_change = learn_rate * (err - BIAS_REGUL_PARAM * (bias_user_old + bias_movie_old));
                  
-    gsl_matrix_set(userSVD, user, SVD_DIM+1, bias_user_old + bias_change);
-	gsl_matrix_set(movieSVD, SVD_DIM+1, movie, bias_movie_old + bias_change);
+    gsl_matrix_set(userSVD, user, SVD_DIM+1, bias_user_old + learn_rate * (err - BIAS_REGUL_PARAM * bias_user_old) );
+	gsl_matrix_set(movieSVD, SVD_DIM+1, movie, bias_movie_old + learn_rate * (err - BIAS_REGUL_PARAM * bias_movie_old) );
     return err;
 }
 
@@ -223,10 +222,10 @@ double SVDK_Nov9::predict_point(int user, int movie){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 
                   gsl_matrix_get(movieSVD, i, movie);
     }
-    if(rating < 1.0)
-        return 1.0;
-    else if(rating > 5.0)
-        return 5.0;
+    if(rating < (1.0 - AVG_RATING))
+        return (1.0 - AVG_RATING);
+    else if(rating > (5.0 - AVG_RATING))
+        return (5.0 - AVG_RATING);
     return rating;
 }
 
@@ -240,10 +239,10 @@ double SVDK_Nov9::predict_point_train(int user, int movie, int svd_pt){
                   gsl_matrix_get(movieSVD, i, movie);
     }
     rating = rating + INIT_SVD_VAL * INIT_SVD_VAL * (SVD_DIM - svd_pt -1);
-    if(rating < 1.0)
-        return 1.0;
-    else if(rating > 5.0)
-        return 5.0;
+    if(rating < (1.0 - AVG_RATING))
+        return (1.0 - AVG_RATING);
+    else if(rating > (5.0 - AVG_RATING))
+        return (5.0 - AVG_RATING);
     return rating;
 }
             
