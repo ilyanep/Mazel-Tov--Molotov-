@@ -31,7 +31,7 @@ void SVD_SVM_Nov6::learn(int partition){
     generate_svm_param();
     free_svd();
 
-    model = svm_train(&prob,&param);
+    model = svm_train(&trainData,&param);
 
     svm_destroy_param(&param);
 	free(trainData.y);
@@ -108,21 +108,23 @@ void SVD_SVM_Nov6::generate_svm_input(int partition){
         if( point % 10000000 == 0)
             printf("\tGenerating... %i percent\n", (int)((float)(point*100.0/DATA_COUNT)) );
         if(get_mu_idx_ratingset(point) == partition){
-            prob.x[partPoint] = &x_space[nodePoint];
-            prob.y[partPoint] = get_mu_all_rating(point);
+            trainData.x[partPoint] = &x_space[nodePoint];
+            trainData.y[partPoint] = get_mu_all_rating(point);
             x_space[nodePoint].index = 1;
             x_space[nodePoint].value = svd_predict(get_mu_all_usernumber(point),
                                                    get_mu_all_movienumber(point),
-                                                   get_mu_all_datenumber(point))
+                                                   get_mu_all_datenumber(point));
             nodePoint++;
             for(int i = 0; i < SVD_DIM; i++){
                 x_space[nodePoint].index = i+2;
                 x_space[nodePoint].value = gsl_matrix_get(userSVD, get_mu_all_usernumber(point)-1, i);
                 nodePoint++;
-            }for(int i = 0; i < SVD_DIM; i++)
+            }
+            for(int i = 0; i < SVD_DIM; i++){
                 x_space[nodePoint].index = i+2+SVD_DIM;
                 x_space[nodePoint].value = gsl_matrix_get(movieSVD, i, get_mu_all_movienumber(point)-1);
                 nodePoint++;
+            }
             x_space[nodePoint].index = -1;
             x_space[nodePoint].value = 0.0;
             nodePoint++;
@@ -147,16 +149,15 @@ void SVD_SVM_Nov6::generate_svm_param(){
 	param.nr_weight = 0;
 	param.weight_label = NULL;
 	param.weight = NULL;
-	cross_validation = 0;
 }
 
-void SVD_SVM_Nov6::save_svm();
-    svm_save_model(SVM_OUTPUT_FILE, model)
+void SVD_SVM_Nov6::save_svm(){
+    svm_save_model(SVM_OUTPUT_FILE, model);
     return;
 }
 
 void SVD_SVM_Nov6::remember(int partition){
-    model = svm_load_model(SVD_OUTPUT_FILE);
+    model = svm_load_model(SVM_OUTPUT_FILE);
 }
 
 void SVD_SVM_Nov6::load_data(){
@@ -181,15 +182,18 @@ double SVD_SVM_Nov6::predict(int user, int movie, int time){
     nodePoint++;
     for(int i = 0; i < SVD_DIM; i++){
         x[nodePoint].index = i+2;
-        x[nodePoint].value = gsl_matrix_get(userSVD, get_mu_all_usernumber(point)-1, i);
+        x[nodePoint].value = gsl_matrix_get(userSVD, user-1, i);
         nodePoint++;
-    }for(int i = 0; i < SVD_DIM; i++)
+    }
+    for(int i = 0; i < SVD_DIM; i++){
         x[nodePoint].index = i+2+SVD_DIM;
-        x[nodePoint].value = gsl_matrix_get(movieSVD, i, get_mu_all_movienumber(point)-1);
+        x[nodePoint].value = gsl_matrix_get(movieSVD, i, movie-1);
         nodePoint++;
+    }
     x[nodePoint].index = -1;
     x[nodePoint].value = 0.0;
 
+    double rating = svm_predict(model, x);
     return rating;
 }
 

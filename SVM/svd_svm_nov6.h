@@ -5,6 +5,7 @@
 #include "../learning_method.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
 #include <string>
+#include "libsvm-3.1/svm.h"
 
 #define SVD_OCT25_PARAM_FILE "../SVM/svd_params.dta"
 #define SVM_OUTPUT_FILE "../SVM/svm_output.dta"
@@ -40,6 +41,11 @@ class SVD_SVM_Nov6: public IPredictor{
         static const double AVG_RATING = 3.6095; //Computed over the first 3 partitions
         static const double INIT_SVD_VAL = 0.1; //Suggested optimal by a lot of papers
         static const int SUBMIT_NUM_POINTS = 2749898;
+
+        static const int PART1_SIZE = 94362233;
+        static const int PART2_SIZE = 1965045;
+        static const int PART3_SIZE = 1964391;
+        static const int PART4_SIZE = 1374739;
 
         SVD_SVM_Nov6();
         void save_svm();
