@@ -30,7 +30,7 @@ SVD_Oct25::SVD_Oct25(){
     learn_rate = LEARN_RATE;
     svd_regul = REGUL_PARAM;
     load_data();
-    base_predict = Oct25_Baseline(data_loaded);
+    base_predict = Baseline_Oct25(data_loaded);
     srand(time(NULL));
 }
 

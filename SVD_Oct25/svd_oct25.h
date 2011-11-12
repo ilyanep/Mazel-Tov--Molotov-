@@ -1,5 +1,5 @@
-#ifndef SVD_SVD_OCT25_H
-#define SVD_SVD_OCT25_H
+#ifndef SVD_OCT25_H
+#define SVD_OCT25_H
 
 #include <gsl/gsl_matrix.h>
 #include "../learning_method.h"
@@ -10,7 +10,7 @@
 
 class SVD_Oct25: public IPredictor{
     private:
-        Oct25_Baseline base_predict;
+        Baseline_Oct25 base_predict;
         double learn_rate;
         double svd_regul;
         bool data_loaded;
