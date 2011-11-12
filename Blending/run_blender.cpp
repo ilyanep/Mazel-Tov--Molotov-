@@ -38,7 +38,7 @@ int main() {
     SVD_Oct25 svd_oct25;
 	Baseline_Oct25 baseline_oct25;
     SVD_Nov2 svd_nov2;
-    SVDK_Nov9 svd_nov9;
+    SVDK_Nov9 svdk_nov9;
     predictor_vector.push_back(&all_3s);
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
