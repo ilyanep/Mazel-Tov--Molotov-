@@ -71,7 +71,6 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
     //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
         oldrmse = rmse;
         k++;
-        point_count = 0;
         for(int i = 0; i < DATA_COUNT; i++){
             if(get_mu_idx_ratingset(i) <= partition){
                 int user = get_mu_all_usernumber(i);
