@@ -21,6 +21,7 @@ class Baseline_Nov12: public IPredictor{
         void learn_by_gradient_descent(int partition);
         void generate_frequency_table(int partition);
         void generate_avg_dates(int partition);
+        void generate_freq_spikes();
         double predictPt(int user, int movie, int time, int *userFreq);
         int findMinIndex(gsl_matrix *mat, int numPts);
         int find_element_vect(vector <int> vect, int element);
