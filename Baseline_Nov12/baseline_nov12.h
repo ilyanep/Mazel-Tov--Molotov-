@@ -44,8 +44,8 @@ class Baseline_Nov12: public IPredictor{
         static const int FREQ_LOG_MAX = 50;
 
         //Gradient descent
-        static const int LEARN_EPOCHS = 1;
-        static const double MIN_RMSE_IMPROVEMENT = 0.1;
+        static const int LEARN_EPOCHS = 100;
+        static const double MIN_RMSE_IMPROVEMENT = 0.00001;
         static const double LEARN_RATE_BU = 0.00267;
         static const double LEARN_RATE_BUT = 0.00255;
         static const double LEARN_RATE_AU = 3.11e-06;

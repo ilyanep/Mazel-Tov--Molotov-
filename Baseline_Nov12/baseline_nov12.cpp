@@ -258,8 +258,6 @@ void Baseline_Nov12::save_baseline(int partition){
 
 void Baseline_Nov12::remember(int partition){
     generate_frequency_table(partition);
-    generate_freq_spikes();
-    generate_avg_dates(partition);
     FILE *inFile;
     inFile = fopen(NOV12_BASELINE_FILE, "r");
     assert(inFile != NULL);
