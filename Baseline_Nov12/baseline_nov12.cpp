@@ -86,7 +86,7 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
                 double user_avgdate = gsl_matrix_get(userBias, user-1, 2);
                 double bi = gsl_matrix_get(movieBias, movie-1, 0);
                 double bit = gsl_matrix_get(movieBias, movie-1, 1 + movieBin);
-                double bif = gsl_matrix_get(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (10.0 * rateFreq));
+                double bif = gsl_matrix_get(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (20.0 * rateFreq));
                 double cu = gsl_matrix_get(userBias, user-1, 3);
                 double cut;
                 if(userFreq != -1){
@@ -111,7 +111,7 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
                 gsl_matrix_set(movieBias, movie-1, 1 + movieBin, bit + change_bit);
                 
                 double change_bif = LEARN_RATE_BIF * (err - REGUL_BIF * bif);
-                gsl_matrix_set(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (10.0 * rateFreq), bif + change_bif);
+                gsl_matrix_set(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (20.0 * rateFreq), bif + change_bif);
 
                 double change_cu = LEARN_RATE_CU * (err * (bi + bit) - REGUL_CU * (cu - 1.0));
                 gsl_matrix_set(userBias, user-1, 3, cu + change_cu);
@@ -153,11 +153,11 @@ double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreqRet
         rateFreq = 0.0;
     else
         rateFreq = log((double)freqNum[user-1][dateIndex]) / LN_LOG_BASE;
-    if (rateFreq > 5.0)
-        rateFreq = 5.0;
+    if (rateFreq > 3.0)
+        rateFreq = 3.0;
     *rateFreqRet = rateFreq;    
-    //0.0->5.0 :: 0 -> 50
-    double freqFactor = gsl_matrix_get(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (10.0 * rateFreq));
+    //0.0->3.0 :: 0 -> 60
+    double freqFactor = gsl_matrix_get(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (20.0 * rateFreq));
 
     //Calculate user gradient
     double user_avgdate = gsl_matrix_get(userBias, user-1, 2);

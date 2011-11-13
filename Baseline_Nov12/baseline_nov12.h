@@ -41,10 +41,10 @@ class Baseline_Nov12: public IPredictor{
         //Frequencies
         static const double LOG_BASE = 6.76;
         static const double LN_LOG_BASE = 1.91102;
-        static const int FREQ_LOG_MAX = 50;
+        static const int FREQ_LOG_MAX = 60;
 
         //Gradient descent
-        static const int LEARN_EPOCHS = 100;
+        static const int LEARN_EPOCHS = 40;
         static const double MIN_RMSE_IMPROVEMENT = 0.00001;
         static const double LEARN_RATE_BU = 0.00267;
         static const double LEARN_RATE_BUT = 0.00255;
