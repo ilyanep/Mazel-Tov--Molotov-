@@ -62,18 +62,15 @@ void Baseline_Nov12::learn(int partition){
 void Baseline_Nov12::learn_by_gradient_descent(int partition){
     
     int k = 0;
-    int point_count;
     double err;
-    double errsq;
     double rmse = 10.0;
     double oldrmse = 100.0;
     int userFreq = -1;
     double rateFreq = 0.0;
-    while(fabs(oldrmse - rmse) > MIN_RMSE_IMPROVEMENT || k < LEARN_EPOCHS){
+    while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT || k < LEARN_EPOCHS){
     //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
         oldrmse = rmse;
         k++;
-        errsq = 0.0;
         point_count = 0;
         for(int i = 0; i < DATA_COUNT; i++){
             if(get_mu_idx_ratingset(i) <= partition){
@@ -127,13 +124,10 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
                     double change_cut = LEARN_RATE_CUT * (err * (bi + bit) - REGUL_CUT * cut);
                     gsl_matrix_set(userBias, user-1, 4+NUM_USER_TIME_FACTORS*2+userFreq, cut + change_cut);
                 }
-                
-                errsq += err * err;
-                point_count++;
             }
         }
-        rmse = errsq / ((double)point_count);
-        printf("\t\tEpoch %u: RMSE(in): %lf; RMSE(out): %lf\n", k, sqrt(rmse), rmse_probe());
+        rmse = rmse_probe();
+        printf("\t\tEpoch %u: RMSE(out): %lf\n", k, rmse_probe());
     }
 
 }
