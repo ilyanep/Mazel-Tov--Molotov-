@@ -140,11 +140,11 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
 
 double Baseline_Nov12::predict(int user, int movie, int date){
     int placeholder = -1;
-    int placeholder2 = -1;
+    double placeholder2 = -1;
     return predictPt(user, movie, date, &placeholder, &placeholder2);
 }
 
-double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreqRet, int *rateFreqRet){
+double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreqRet, double *rateFreqRet){
     //userBias: [user-1][intercept slope avgRatingDate multIntercept freqDate0 freqDate1 ... spikeAvg0 spikeAvg1 ... spikeMult0 spikeMult1 ...]
     //movieBias [movie-1][globalBias movieBin0_avg movieBin1_avg ... freqFact0 ... freqFact3]
 
@@ -155,7 +155,7 @@ double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreqRet
 
     //Calculate movie frequency factor
     int dateIndex = find_element_vect(freqDates[user-1], date);
-    double logRateFreq;
+    double rateFreq;
     if(dateIndex == -1)
         rateFreq = 0.0;
     else
