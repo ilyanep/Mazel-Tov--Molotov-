@@ -15,7 +15,7 @@ Baseline_Nov12::Baseline_Nov12(){
 
     //Initially all matrix elements are set to 0.0
     userBias = gsl_matrix_calloc(USER_COUNT, 4 + NUM_USER_TIME_FACTORS * 3);
-    movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + 4);
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
     //Set multiplicative factor to 1.0
     for (int i = 0; i < USER_COUNT; i++)
         gsl_matrix_set(userBias, i, 3, 1.0);
@@ -68,6 +68,7 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
     double rmse = 10.0;
     double oldrmse = 100.0;
     int userFreq = -1;
+    double rateFreq = 0.0;
     while(fabs(oldrmse - rmse) > MIN_RMSE_IMPROVEMENT || k < LEARN_EPOCHS){
     //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
         oldrmse = rmse;
@@ -81,7 +82,7 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
                 int date = get_mu_all_datenumber(i);
                 int movieBin = (date - 1) / MOVIE_BIN_SIZE;
     
-                err = (double)get_mu_all_rating(i) - predictPt(user, movie, date, &userFreq);
+                err = (double)get_mu_all_rating(i) - predictPt(user, movie, date, &userFreq, &rateFreq);
                 
                 double bu = gsl_matrix_get(userBias, user-1, 0);
                 double but;
@@ -89,6 +90,7 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
                 double user_avgdate = gsl_matrix_get(userBias, user-1, 2);
                 double bi = gsl_matrix_get(movieBias, movie-1, 0);
                 double bit = gsl_matrix_get(movieBias, movie-1, 1 + movieBin);
+                double bif = gsl_matrix_get(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (10.0 * rateFreq));
                 double cu = gsl_matrix_get(userBias, user-1, 3);
                 double cut;
                 if(userFreq != -1){
@@ -112,6 +114,9 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
                 double change_bit = LEARN_RATE_BIT * (err * (cu + cut) - REGUL_BIT * bit);
                 gsl_matrix_set(movieBias, movie-1, 1 + movieBin, bit + change_bit);
                 
+                double change_bif = LEARN_RATE_BIF * (err - REGUL_BIF * bif);
+                gsl_matrix_set(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (10.0 * rateFreq), bif + change_bif);
+
                 double change_cu = LEARN_RATE_CU * (err * (bi + bit) - REGUL_CU * (cu - 1.0));
                 gsl_matrix_set(userBias, user-1, 3, cu + change_cu);
 
@@ -135,10 +140,11 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
 
 double Baseline_Nov12::predict(int user, int movie, int date){
     int placeholder = -1;
-    return predictPt(user, movie, date, &placeholder);
+    int placeholder2 = -1;
+    return predictPt(user, movie, date, &placeholder, &placeholder2);
 }
 
-double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreq){
+double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreqRet, int *rateFreqRet){
     //userBias: [user-1][intercept slope avgRatingDate multIntercept freqDate0 freqDate1 ... spikeAvg0 spikeAvg1 ... spikeMult0 spikeMult1 ...]
     //movieBias [movie-1][globalBias movieBin0_avg movieBin1_avg ... freqFact0 ... freqFact3]
 
@@ -146,7 +152,20 @@ double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreq){
     int movieBin = (date - 1) / MOVIE_BIN_SIZE;
     double movieFactor = gsl_matrix_get(movieBias, movie-1, 0) +
                          gsl_matrix_get(movieBias, movie-1, 1 + movieBin);
-    
+
+    //Calculate movie frequency factor
+    int dateIndex = find_element_vect(freqDates[user-1], date);
+    double logRateFreq;
+    if(dateIndex == -1)
+        rateFreq = 0.0;
+    else
+        rateFreq = log((double)freqNum[user-1][dateIndex]) / LN_LOG_BASE;
+    if (rateFreq > 5.0)
+        rateFreq = 5.0;
+    *rateFreqRet = rateFreq;    
+    //0.0->5.0 :: 0 -> 50
+    double freqFactor = gsl_matrix_get(movieBias, movie-1, 1 + NUM_MOVIE_BINS + (int) (10.0 * rateFreq));
+
     //Calculate user gradient
     double user_avgdate = gsl_matrix_get(userBias, user-1, 2);
     double user_intercept = gsl_matrix_get(userBias, user-1, 0);
@@ -173,9 +192,9 @@ double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreq){
     }
     if(found){
         spikeFactor = gsl_matrix_get(userBias, user-1, 4+NUM_USER_TIME_FACTORS+datePoint);
-        *userFreq = datePoint;
+        *userFreqRet = datePoint;
     }else{
-        *userFreq = -1;
+        *userFreqRet = -1;
     }
         
     userFactor = userFactor + spikeFactor;
@@ -184,81 +203,106 @@ double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreq){
     if(found)
         multFactor += gsl_matrix_get(userBias, user-1, 4+NUM_USER_TIME_FACTORS*2+datePoint);
 
-    double rating = AVG_RATING + userFactor + movieFactor * multFactor;
+    double rating = AVG_RATING + userFactor + movieFactor * multFactor + freqFactor;
     return rating;
 }
 
 void Baseline_Nov12::save_baseline(int partition){
-    /*FILE *outFile;
+    FILE *outFile;
     outFile = fopen(NOV12_BASELINE_FILE, "w");
-    double bias, intercept, slope, avgdate, freqdate, spike;
+    double intercept, slope, avgdate, multfact, freqdate, spike, multspike;
     fprintf(outFile,"%u\n",partition); 
     for(int user = 0; user < USER_COUNT; user++){
         intercept = gsl_matrix_get(userBias, user, 0);
         slope = gsl_matrix_get(userBias, user, 1);
         avgdate = gsl_matrix_get(userBias, user, 2);
+        multfact = gsl_matrix_get(userBias, user, 3);
         fprintf(outFile,"%lf\t",intercept);
         fprintf(outFile,"%lf\t",slope);
         fprintf(outFile,"%lf\t",avgdate);
+        fprintf(outFile,"%lf\t",multfact);
         for(int spikedate = 0; spikedate < NUM_USER_TIME_FACTORS; spikedate++){
-            freqdate = gsl_matrix_get(userBias, user, 3+spikedate);
+            freqdate = gsl_matrix_get(userBias, user, 4+spikedate);
             fprintf(outFile,"%lf\t",freqdate);
         }
         for(int spikedate = 0; spikedate < NUM_USER_TIME_FACTORS; spikedate++){
             spike = gsl_matrix_get(userBias, user, 
-                        3+NUM_USER_TIME_FACTORS +spikedate);
+                        4+NUM_USER_TIME_FACTORS +spikedate);
             fprintf(outFile,"%lf\t",spike);
+        }
+        for(int spikedate = 0; spikedate < NUM_USER_TIME_FACTORS; spikedate++){
+            multspike = gsl_matrix_get(userBias, user, 
+                        4+NUM_USER_TIME_FACTORS*2 +spikedate);
+            fprintf(outFile,"%lf\t",multspike);
         }
         fprintf(outFile,"\n");
     }
+    double bias, binbias, freqfact;
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
+        bias = gsl_matrix_get(movieBias, movie, 0);
+        fprintf(outFile,"%lf\t",bias);
         for(int bin = 0; bin < NUM_MOVIE_BINS; bin++){
-            bias = gsl_matrix_get(movieBias, movie, bin);	
-            fprintf(outFile,"%lf\t",bias);
+            binbias = gsl_matrix_get(movieBias, movie, 1+bin);	
+            fprintf(outFile,"%lf\t",binbias);
+        }
+        for(int freqIndex = 0; freqIndex < FREQ_LOG_MAX; freqIndex++){
+            freqfact = gsl_matrix_get(movieBias, movie, 1 + NUM_MOVIE_BINS + freqIndex);	
+            fprintf(outFile,"%lf\t",freqfact);
         }
         fprintf(outFile,"\n");
     }
     fclose(outFile);
     return;
-    */
 }
 
 
 void Baseline_Nov12::remember(int partition){
-    /*
     FILE *inFile;
     inFile = fopen(NOV12_BASELINE_FILE, "r");
     assert(inFile != NULL);
     int load_partition;
     fscanf(inFile,"%u",&load_partition);
     assert(load_partition == partition);
-    double bias, intercept, slope, avgdate, freqdate, spike;
+    double intercept, slope, avgdate, multfact, freqdate, spike, multspike;
     for(int user = 0; user < USER_COUNT; user++){
         fscanf(inFile,"%lf",&intercept);
         fscanf(inFile,"%lf",&slope);
         fscanf(inFile,"%lf",&avgdate);
+        fscanf(inFile,"%lf",&multfact);
         gsl_matrix_set(userBias, user, 0, intercept);
         gsl_matrix_set(userBias, user, 1, slope);
         gsl_matrix_set(userBias, user, 2, avgdate);
+        gsl_matrix_set(userBias, user, 3, multfact);
         for(int spikedate = 0; spikedate < NUM_USER_TIME_FACTORS; spikedate++){
             fscanf(inFile,"%lf",&freqdate);
-            gsl_matrix_set(userBias, user, 3+spikedate,freqdate);
+            gsl_matrix_set(userBias, user, 4+spikedate,freqdate);
         }
         for(int spikedate = 0; spikedate < NUM_USER_TIME_FACTORS; spikedate++){
             fscanf(inFile,"%lf",&spike);
             gsl_matrix_set(userBias, user, 
-                        3+NUM_USER_TIME_FACTORS +spikedate, spike);
+                        4+NUM_USER_TIME_FACTORS +spikedate, spike);
+        }
+        for(int spikedate = 0; spikedate < NUM_USER_TIME_FACTORS; spikedate++){
+            fscanf(inFile,"%lf",&multspike);
+            gsl_matrix_set(userBias, user, 
+                        4+NUM_USER_TIME_FACTORS*2 +spikedate, multspike);
         }
     }
+    double bias, binbias, freqfact;
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
+        fscanf(inFile,"%lf",&bias);
+        gsl_matrix_set(movieBias, movie, 0, bias);
         for(int bin = 0; bin < NUM_MOVIE_BINS; bin++){
-            fscanf(inFile,"%lf",&bias);
-            gsl_matrix_set(movieBias, movie, bin, bias);	
+            fscanf(inFile,"%lf",&binbias);
+            gsl_matrix_set(movieBias, movie, 1+bin, binbias);	
+        }
+        for(int freqIndex = 0; freqIndex < FREQ_LOG_MAX; freqIndex++){
+            fscanf(inFile,"%lf",&freqfact);
+            gsl_matrix_set(movieBias, movie, 1 + NUM_MOVIE_BINS + freqIndex, freqfact);	
         }
     }
     fclose(inFile);
     return;
-    */
 }
 
 double Baseline_Nov12::rmse_probe(){

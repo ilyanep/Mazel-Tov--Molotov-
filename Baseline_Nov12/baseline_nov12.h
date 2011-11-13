@@ -21,7 +21,7 @@ class Baseline_Nov12: public IPredictor{
         void generate_frequency_table(int partition);
         void generate_avg_dates(int partition);
         void generate_freq_spikes();
-        double predictPt(int user, int movie, int time, int *userFreq);
+        double predictPt(int user, int movie, int time, int *userFreq, int *rateFreq);
         int findMinIndex(gsl_matrix *mat, int numPts);
         int find_element_vect(vector <int> vect, int element);
     public:
@@ -32,25 +32,20 @@ class Baseline_Nov12: public IPredictor{
         static const int SUBMIT_NUM_POINTS = 2749898;
         static const double AVG_RATING = 3.6095; //Computed over the first 3 partitions
 
-        //Global averages
-        static const double REGUL_BIAS_MOVIE = 25; //from BelKor
-        static const double REGUL_BIAS_USER = 10; //from BelKor
-
         //Time effects
         static const int MOVIE_BIN_SIZE = 90; //from BelKor
         static const int NUM_MOVIE_BINS = 25; //from BelKor
         static const double USER_DATE_EXP = 0.4; //Optimized by hand 0.01
         static const int NUM_USER_TIME_FACTORS = 40;  //from BelKor
-        static const int USER_FREQ_REGUL = 3;
-        static const int USER_DATE_REGUL = 50; //Optimized by hand 50
 
         //Frequencies
         static const double LOG_BASE = 6.76;
-        static const int FREQ_LOG_MAX = 4;
+        static const double LN_LOG_BASE = 1.91102;
+        static const int FREQ_LOG_MAX = 50;
 
         //Gradient descent
-        static const int LEARN_EPOCHS = 40;
-        static const double MIN_RMSE_IMPROVEMENT = 0.001;
+        static const int LEARN_EPOCHS = 1;
+        static const double MIN_RMSE_IMPROVEMENT = 0.1;
         static const double LEARN_RATE_BU = 0.00267;
         static const double LEARN_RATE_BUT = 0.00255;
         static const double LEARN_RATE_AU = 3.11e-06;
