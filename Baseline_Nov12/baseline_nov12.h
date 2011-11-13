@@ -17,7 +17,6 @@ class Baseline_Nov12: public IPredictor{
         vector< vector<int> > freqNum;  //[user][freq]
         void load_data();
 
-        void find_user_rating_days(int partition);
         void learn_by_gradient_descent(int partition);
         void generate_frequency_table(int partition);
         void generate_avg_dates(int partition);
@@ -54,7 +53,7 @@ class Baseline_Nov12: public IPredictor{
         static const double MIN_RMSE_IMPROVEMENT = 0.001;
         static const double LEARN_RATE_BU = 0.00267;
         static const double LEARN_RATE_BUT = 0.00255;
-        static const double LEARN_RATE_AU = 3.11e-6;
+        static const double LEARN_RATE_AU = 3.11e-06;
         static const double LEARN_RATE_BI = 0.00048;
         static const double LEARN_RATE_BIT = 0.000115;
         static const double LEARN_RATE_CU = 0.00564;
@@ -67,7 +66,7 @@ class Baseline_Nov12: public IPredictor{
         static const double REGUL_BIT = 0.0929;
         static const double REGUL_CU = 0.0496;
         static const double REGUL_CUT = 1.90;
-        static const double REGUL_BIF = 1.10e-8;
+        static const double REGUL_BIF = 1.10e-08;
 
         Baseline_Nov12();
         Baseline_Nov12(bool loadedData);

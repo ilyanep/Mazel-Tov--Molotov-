@@ -48,11 +48,11 @@ Baseline_Nov12::Baseline_Nov12(bool loadedData){
 
 
 void Baseline_Nov12::learn(int partition){
+    printf("Initializing temporal dynamics...\n");
     generate_frequency_table(partition);
     generate_freq_spikes();
     generate_avg_dates(partition);
-    printf("Finding user time spikes...\n");
-    find_user_rating_days(partition);
+    printf("RMSE before learning: %lf\n", rmse_probe());
     printf("Learning parameters by gradient descent\n");
     learn_by_gradient_descent(partition);
 
@@ -131,42 +131,6 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
         printf("\t\tEpoch %u: RMSE(in): %lf; RMSE(out): %lf\n", k, sqrt(rmse), rmse_probe());
     }
 
-}
-/* Compute the days with the highest frequency of rating for each user
- *
- * First fill rating_frequency with number of ratings on each day for each user
- * Then pick up days with the most ratings and store them in user_days
- */
-void Baseline_Nov12::find_user_rating_days(int partition){
-
-    printf("\t\tPicking highest frequency dates...\n");
-    gsl_matrix *user_days;
-    for(int user = 0; user < USER_COUNT; user++){
-        //if(user % 100000 == 0)
-        //    printf("\t\t\t%i percent\n", (int)((double)user*100.0/(double)USER_COUNT));
-        user_days = gsl_matrix_calloc(NUM_USER_TIME_FACTORS, 1);
-        int minIndex = 0;
-        int fillCount = 0;
-        int ratingFreq = 0;
-        for(int dateIndex = 0; dateIndex < freqDates[user].size(); dateIndex++){
-            if(fillCount < NUM_USER_TIME_FACTORS){
-                gsl_matrix_set(user_days, fillCount, 0, freqDates[user][dateIndex]);
-                fillCount++;
-                minIndex = findMinIndex(user_days, fillCount);
-            }else{
-                ratingFreq = freqNum[user][dateIndex];
-                if(gsl_matrix_get(user_days, minIndex, 0) < ratingFreq){
-                    gsl_matrix_set(user_days, minIndex, 0, freqDates[user][dateIndex]);
-                    minIndex = findMinIndex(user_days, NUM_USER_TIME_FACTORS);
-                }
-            }
-        }
-        for(int freqdate = 0; freqdate < NUM_USER_TIME_FACTORS; freqdate++){
-            gsl_matrix_set(userBias, user, 4 + freqdate,
-                gsl_matrix_get(user_days, freqdate, 0));
-        }
-        gsl_matrix_free(user_days);
-    }
 }
 
 double Baseline_Nov12::predict(int user, int movie, int date){
@@ -325,6 +289,7 @@ void Baseline_Nov12::load_data(){
 }
 
 void Baseline_Nov12::generate_frequency_table(int partition){
+    printf("\tGenerating frequency table...\n");
     freqDates.reserve(USER_COUNT);
     freqNum.reserve(USER_COUNT);
     for(int user = 0; user < USER_COUNT; user++){
@@ -335,7 +300,6 @@ void Baseline_Nov12::generate_frequency_table(int partition){
     }
     int user;
     int date;
-    //printf("\t\tGenerating frequency table...\n");
     for(int point = 0; point < DATA_COUNT; point++){
         //if(point % 10000000 == 0)
         //    printf("\t\t\t%i percent\n", (int)((double)point*100.0/(double)DATA_COUNT));
@@ -359,7 +323,7 @@ void Baseline_Nov12::generate_frequency_table(int partition){
 }
 
 void Baseline_Nov12::generate_freq_spikes(){
-    //printf("\t\tPicking highest frequency dates...\n");
+    printf("\tPicking highest frequency dates...\n");
     gsl_matrix *user_days;
     for(int user = 0; user < USER_COUNT; user++){
         //if(user % 100000 == 0)
@@ -390,8 +354,9 @@ void Baseline_Nov12::generate_freq_spikes(){
 }
 
 void Baseline_Nov12::generate_avg_dates(int partition){
-    //printf("\tCalculating average rating dates and errors...\n");
-    gsl_matrix *userBias_t = gsl_matrix_calloc(USER_COUNT, 2);
+    printf("\tCalculating average rating dates...\n");
+    gsl_matrix *userBias_t;
+    userBias_t = gsl_matrix_calloc(USER_COUNT, 2);
 
     //Find average rating date and error
     int user;
@@ -416,12 +381,11 @@ void Baseline_Nov12::generate_avg_dates(int partition){
     for(user = 0; user < USER_COUNT; user++){
         numR = (double)gsl_matrix_get(userBias_t, user, 1);
         if(numR == 0){
-            gsl_matrix_set(userBias, user, 2, 0.0);
+            gsl_matrix_set(userBias, user, 2, 0.5);
         }else{
             avgdate = ((double)gsl_matrix_get(userBias_t, user, 0))/
                       ((double)numR);
-
-            gsl_matrix_set(userBias, user, 2, avgdate);
+            gsl_matrix_set(userBias, user, 2, avgdate + 0.5);
         }
     }
 }
