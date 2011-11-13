@@ -33,7 +33,7 @@ Baseline_Nov12::Baseline_Nov12(bool loadedData){
 
     //Initially all matrix elements are set to 0.0
     userBias = gsl_matrix_calloc(USER_COUNT, 4 + NUM_USER_TIME_FACTORS * 3);
-    movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + 4);
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
     //Set multiplicative factor to 1.0
     for (int i = 0; i < USER_COUNT; i++)
         gsl_matrix_set(userBias, i, 3, 1.0);

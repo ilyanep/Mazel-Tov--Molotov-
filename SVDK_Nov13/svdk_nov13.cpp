@@ -17,13 +17,14 @@ SVDK_Nov13::SVDK_Nov13(){
     //Initially all matrix elements are set to 0.1
     userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+1);
     movieSVD = gsl_matrix_calloc(SVD_DIM+1, MOVIE_COUNT);
+    assert(userSVD != NULL && movieSVD != NULL);
     for(int i = 0; i < USER_COUNT; i++){
-        for(int p = 0; p < SVD_DIM+1; p++){
+        for(int p = 0; p < SVD_DIM; p++){
             gsl_matrix_set(userSVD, i, p, INIT_SVD_VAL);
         }
     }
 	for(int i = 0; i < MOVIE_COUNT; i++){
-        for(int p = 0; p < SVD_DIM+1; p++){
+        for(int p = 0; p < SVD_DIM; p++){
             gsl_matrix_set(movieSVD, p, i, INIT_SVD_VAL);
         }
     }
@@ -44,6 +45,7 @@ void SVDK_Nov13::learn(int partition, bool refining){
     printf("Loading baseline predictor...\n");
     base_predict.remember(partition);
     
+    printf("Learning SVD...\n");
 
     /* Choose points randomly */
    // for(int k = 0; k < DATA_COUNT * LEARN_EPOCHS; k++){
@@ -85,8 +87,8 @@ void SVDK_Nov13::learn(int partition, bool refining){
             for(int i = 0; i < DATA_COUNT; i++){
                 if(get_mu_idx_ratingset(i) <= partition){
                     err = learn_point(p, get_mu_all_usernumber(i)-1,
-                                         get_mu_all_movienumber(i)-1,
-                                         get_mu_all_datenumber(i),
+                                         (int)get_mu_all_movienumber(i)-1,
+                                         (int)get_mu_all_datenumber(i),
                                          (double)get_mu_all_rating(i), refining);
                     if(err != -999){
                         errsq = errsq + err * err;
@@ -224,7 +226,7 @@ double SVDK_Nov13::predict_point(int user, int movie, int date){
 double SVDK_Nov13::predict_point_train(int user, int movie, int date, int svd_pt){
     double rating = base_predict.predict(user+1, movie+1, date) +
                     gsl_matrix_get(userSVD, user, SVD_DIM) +
-                   gsl_matrix_get(movieSVD, SVD_DIM, movie);
+                    gsl_matrix_get(movieSVD, SVD_DIM, movie);
     for (int i = 0; i <= svd_pt; i++){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 
                   gsl_matrix_get(movieSVD, i, movie);

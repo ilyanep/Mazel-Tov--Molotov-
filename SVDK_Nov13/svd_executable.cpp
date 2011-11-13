@@ -36,8 +36,9 @@ int main(int argc, char* argv[]) {
         assert(load_mu_qual_usernumber() == 0);
         assert(load_mu_qual_movienumber() == 0);
         for(int i=0; i < SVDK_Nov13::SUBMIT_NUM_POINTS; i++) {
-            results.push_back(predictor.predict(get_mu_qual_usernumber(i),
-                                           (int)get_mu_qual_movienumber(i),0));
+            results.push_back( predictor.predict(get_mu_qual_usernumber(i),
+                                           (int)get_mu_qual_movienumber(i),
+                                           (int)get_mu_qual_datenumber(i)) );
         }
         output_results(results);
     }      
