@@ -27,7 +27,7 @@ class SVDK_Nov13: public IPredictor{
         static const int MOVIE_COUNT = 17770;
         static const int DATA_COUNT = 102416306;
         static const int LEARN_EPOCHS_MIN = 120; //Papers suggest a big dip in RMSE if >50?
-        static const int REFINE_EPOCHS_MIN = 30; //Feasible time-wise
+        static const int REFINE_EPOCHS_MIN = 120; //Feasible time-wise
         static const double MIN_RMSE_IMPROVEMENT = 0.0001; //Arbitrary
         static const double LEARN_RATE = 0.001; //Suggested optimal by a lot of papers
         static const double FEATURE_REGUL_PARAM = 0.02; //Suggested optimal by a lot of papers
