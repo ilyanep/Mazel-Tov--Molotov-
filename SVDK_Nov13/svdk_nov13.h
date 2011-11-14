@@ -7,7 +7,6 @@
 #include "../Baseline_Nov12/baseline_nov12.h"
 
 #define NOV13_SVDK_PARAM_FILE "../SVDK_Nov13/svd_params.dta"
-#define NOV13_SVDK_BIAS_FILE "../SVDK_Nov13/svd_bias.dta"
 
 class SVDK_Nov13: public IPredictor{
     private:

@@ -97,10 +97,10 @@ void SVDK_Nov13::learn(int partition, bool refining){
                     err = learn_point(p, get_mu_all_usernumber(i)-1,
                                          (int)get_mu_all_movienumber(i)-1,
                                          unbiased_ratings[i], refining);
-                    if(err != -999){
+                    //if(err != -999){
                         errsq = errsq + err * err;
                         point_count++;
-                    }
+                    //}
                 }
             }
             rmse = errsq / ((double)point_count);
@@ -111,8 +111,8 @@ void SVDK_Nov13::learn(int partition, bool refining){
 }
 
 double SVDK_Nov13::learn_point(int svd_pt, int user, int movie, double rating, bool refining){
-    if(rating == 0)
-        return -999;
+    //if(rating == 0)
+    //    return -999;
     //Figure out current error on this point and modify feature parameters
     double err;
     //if(refining)
@@ -238,10 +238,10 @@ double SVDK_Nov13::predict_point_train(int user, int movie, double base, int svd
                   gsl_matrix_get(movieSVD, i, movie);
     }
     rating = rating + INIT_SVD_VAL * INIT_SVD_VAL * (SVD_DIM - svd_pt -1);
-    if(rating < 1.0 - base)
-        return 1.0 - base;
-    else if(rating > 5.0 - base)
-        return 5.0 - base;
+    if(rating < (1.0 - base))
+        return (1.0 - base);
+    else if(rating > (5.0 - base))
+        return (5.0 - base);
     return rating;
 }
             
