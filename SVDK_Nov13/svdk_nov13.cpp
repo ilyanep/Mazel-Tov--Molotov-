@@ -57,6 +57,8 @@ void SVDK_Nov13::learn(int partition, bool refining){
                                   base_predict.predict((int)get_mu_all_usernumber(point),
                                                        (int)get_mu_all_movienumber(point),
                                                        (int)get_mu_all_datenumber(point));
+        if(point % 1000000 == 0)
+            printf("Original rating: %lf, unbiased rating: %lf \n", (double)get_mu_all_rating(point), unbiased_ratings[point]);
     }
 
     /* Choose points randomly */
