@@ -14,12 +14,12 @@ class SVDK_Nov13: public IPredictor{
         bool baseLoaded;
         double learn_rate;
         bool data_loaded;
-        double *unbiased_ratings;
+        double *data_bias;
         gsl_matrix *userSVD;
         gsl_matrix *movieSVD;
-        double learn_point(int svd_pt, int user, int movie, double rating, bool refining);
+        double learn_point(int svd_pt, int user, int movie, double rating, double bias, bool refining);
         double predict_point(int user, int movie, int date);
-        double predict_point_train(int user, int movie, double base, int svd_pt);
+        double predict_point_train(int user, int movie, double bias, int svd_pt);
         void load_data();
     public:
         static const int SVD_DIM = 48; //Seems that only first 14 actually matter
