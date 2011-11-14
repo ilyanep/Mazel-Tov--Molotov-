@@ -118,7 +118,7 @@ double SVDK_Nov13::learn_point(int svd_pt, int user, int movie, double rating, b
     //if(refining)
     //    err = rating - predict_point(user, movie, date);
     //else
-	    err = rating - predict_point_train(user, movie, svd_pt);
+	    err = rating - predict_point_train(user, movie, rating, svd_pt);
     double svd_user_old = gsl_matrix_get(userSVD, user, svd_pt); 
     double svd_movie_old = gsl_matrix_get(movieSVD, svd_pt, movie);
 
@@ -230,7 +230,7 @@ double SVDK_Nov13::predict_point(int user, int movie, int date){
     return rating;
 }
 
-double SVDK_Nov13::predict_point_train(int user, int movie, int svd_pt){
+double SVDK_Nov13::predict_point_train(int user, int movie, double base, int svd_pt){
     double rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
                     gsl_matrix_get(movieSVD, SVD_DIM, movie);
     for (int i = 0; i <= svd_pt; i++){
@@ -238,10 +238,10 @@ double SVDK_Nov13::predict_point_train(int user, int movie, int svd_pt){
                   gsl_matrix_get(movieSVD, i, movie);
     }
     rating = rating + INIT_SVD_VAL * INIT_SVD_VAL * (SVD_DIM - svd_pt -1);
-    if(rating < 1.0)
-        return 1.0;
-    else if(rating > 5.0)
-        return 5.0;
+    if(rating < 1.0 - base)
+        return 1.0 - base;
+    else if(rating > 5.0 - base)
+        return 5.0 - base;
     return rating;
 }
             

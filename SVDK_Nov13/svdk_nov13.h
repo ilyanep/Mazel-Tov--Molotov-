@@ -19,7 +19,7 @@ class SVDK_Nov13: public IPredictor{
         gsl_matrix *movieSVD;
         double learn_point(int svd_pt, int user, int movie, double rating, bool refining);
         double predict_point(int user, int movie, int date);
-        double predict_point_train(int user, int movie, int svd_pt);
+        double predict_point_train(int user, int movie, double base, int svd_pt);
         void load_data();
     public:
         static const int SVD_DIM = 48; //Seems that only first 14 actually matter
