@@ -11,6 +11,7 @@
 class SVDK_Nov13: public IPredictor{
     private:
         Baseline_Nov12 base_predict;
+        bool baseLoaded;
         double learn_rate;
         bool data_loaded;
         double *unbiased_ratings;

@@ -29,6 +29,7 @@ SVDK_Nov13::SVDK_Nov13(){
         }
     }
     data_loaded = false;
+    baseLoaded = false;
     learn_rate = LEARN_RATE;
     load_data();
     base_predict = Baseline_Nov12(data_loaded);
@@ -42,8 +43,11 @@ void SVDK_Nov13::learn(int partition){
 void SVDK_Nov13::learn(int partition, bool refining){
     assert(data_loaded);
 
-    printf("Loading baseline predictor...\n");
-    base_predict.remember(partition);
+    if(!baseLoaded){
+        printf("Loading baseline predictor...\n");
+        base_predict.remember(partition);
+        baseLoaded = true;
+    }
     
     printf("Learning SVD...\n");
     printf("Generating unbiased data set...\n");
@@ -158,6 +162,10 @@ void SVDK_Nov13::save_svd(int partition){
 }
 
 void SVDK_Nov13::remember(int partition){
+    if(!baseLoaded){
+        base_predict.remember(partition);
+        baseLoaded = true;
+    }
     FILE *inFile;
     inFile = fopen(NOV13_SVDK_PARAM_FILE, "r");
     assert(inFile != NULL);
