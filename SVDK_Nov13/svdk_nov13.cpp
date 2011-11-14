@@ -46,6 +46,14 @@ void SVDK_Nov13::learn(int partition, bool refining){
     base_predict.remember(partition);
     
     printf("Learning SVD...\n");
+    printf("Generating unbiased data set...\n");
+    unbiased_ratings = new double[DATA_COUNT];
+    for(int point = 0; point < DATA_COUNT; point++){
+        unbiased_ratings[point] = (double)get_mu_all_rating(point) - 
+                                  base_predict.predict(get_mu_all_usernumber(point),
+                                                       (int)get_mu_all_movienumber(point),
+                                                       (int)get_mu_all_datenumber(point));
+    }
 
     /* Choose points randomly */
    // for(int k = 0; k < DATA_COUNT * LEARN_EPOCHS; k++){
@@ -88,8 +96,7 @@ void SVDK_Nov13::learn(int partition, bool refining){
                 if(get_mu_idx_ratingset(i) <= partition){
                     err = learn_point(p, get_mu_all_usernumber(i)-1,
                                          (int)get_mu_all_movienumber(i)-1,
-                                         (int)get_mu_all_datenumber(i),
-                                         (double)get_mu_all_rating(i), refining);
+                                         unbiased_ratings[i], refining);
                     if(err != -999){
                         errsq = errsq + err * err;
                         point_count++;
@@ -103,15 +110,15 @@ void SVDK_Nov13::learn(int partition, bool refining){
     }
 }
 
-double SVDK_Nov13::learn_point(int svd_pt, int user, int movie, int date, double rating, bool refining){
+double SVDK_Nov13::learn_point(int svd_pt, int user, int movie, double rating, bool refining){
     if(rating == 0)
         return -999;
     //Figure out current error on this point and modify feature parameters
     double err;
-    if(refining)
-        err = rating - predict_point(user, movie, date);
-    else
-	    err = rating - predict_point_train(user, movie, date, svd_pt);
+    //if(refining)
+    //    err = rating - predict_point(user, movie, date);
+    //else
+	    err = rating - predict_point_train(user, movie, svd_pt);
     double svd_user_old = gsl_matrix_get(userSVD, user, svd_pt); 
     double svd_movie_old = gsl_matrix_get(movieSVD, svd_pt, movie);
 
@@ -223,9 +230,8 @@ double SVDK_Nov13::predict_point(int user, int movie, int date){
     return rating;
 }
 
-double SVDK_Nov13::predict_point_train(int user, int movie, int date, int svd_pt){
-    double rating = base_predict.predict(user+1, movie+1, date) +
-                    gsl_matrix_get(userSVD, user, SVD_DIM) +
+double SVDK_Nov13::predict_point_train(int user, int movie, int svd_pt){
+    double rating = gsl_matrix_get(userSVD, user, SVD_DIM) +
                     gsl_matrix_get(movieSVD, SVD_DIM, movie);
     for (int i = 0; i <= svd_pt; i++){
         rating = rating + gsl_matrix_get(userSVD, user, i) * 
