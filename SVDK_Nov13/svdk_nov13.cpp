@@ -54,7 +54,7 @@ void SVDK_Nov13::learn(int partition, bool refining){
     unbiased_ratings = new double[DATA_COUNT];
     for(int point = 0; point < DATA_COUNT; point++){
         unbiased_ratings[point] = (double)get_mu_all_rating(point) - 
-                                  base_predict.predict(get_mu_all_usernumber(point),
+                                  base_predict.predict((int)get_mu_all_usernumber(point),
                                                        (int)get_mu_all_movienumber(point),
                                                        (int)get_mu_all_datenumber(point));
     }
