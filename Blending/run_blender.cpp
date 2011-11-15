@@ -11,8 +11,9 @@ using namespace std;
 #include "../SVD_Oct18/svd_oct18.h"
 #include "../SVD_Oct25/svd_oct25.h"
 #include "../SVD_Nov2/svd_nov2.h"
-#include "../SVD/learn_svd.h"
+#include "../SVDK_Nov9/svdk_nov9.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
+#include "../Baseline_Nov12/baseline_nov12.h"
 #include "../movie_knn/movie_knn_pearson.h"
 
 #define BLENDER_LEARNING_PARTITION 4
@@ -34,17 +35,21 @@ int main() {
     Movie_Knn mknn;
     Movie_Knn_Pearson mknn_pearson;
     All3Predictor all_3s; 
-    Oct18_SVD svd_oct18;
+    SVD_Oct18 svd_oct18;
     SVD_Oct25 svd_oct25;
-	Oct25_Baseline baseline_oct25;
+	Baseline_Oct25 baseline_oct25;
+    Baseline_Nov12 baseline_nov12;
     SVD_Nov2 svd_nov2;
+    SVDK_Nov9 svdk_nov9;
     predictor_vector.push_back(&all_3s);
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
     predictor_vector.push_back(&baseline_oct25);
+    predictor_vector.push_back(&baseline_nov12);
     predictor_vector.push_back(&svd_nov2);
     predictor_vector.push_back(&mknn);
     predictor_vector.push_back(&mknn_pearson);
+    predictor_vector.push_back(&svdk_nov9);
 
     // Initialize your mom
     cout << "Loarning linear blender" << endl;

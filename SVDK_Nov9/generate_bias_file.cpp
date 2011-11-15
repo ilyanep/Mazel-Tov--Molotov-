@@ -1,5 +1,5 @@
 #include <string.h>
-#include "svd.h"
+#include "svdk_nov9.h"
 #include <math.h>
 #include <assert.h>
 using namespace std;
@@ -14,11 +14,11 @@ int main(int argc, char* argv[]) {
     assert(load_mu_idx_ratingset() == 0);
     
     printf("Calculating user/movie biases...\n");
-    gsl_matrix *userBias = gsl_matrix_calloc(SVD::USER_COUNT, 2);
-    gsl_matrix *movieBias = gsl_matrix_calloc(SVD::MOVIE_COUNT, 2);
+    gsl_matrix *userBias = gsl_matrix_calloc(SVDK_Nov9::USER_COUNT, 2);
+    gsl_matrix *movieBias = gsl_matrix_calloc(SVDK_Nov9::MOVIE_COUNT, 2);
     int user;
     int movie;
-    for(int point = 0; point < SVD::DATA_COUNT; point++){
+    for(int point = 0; point < SVDK_Nov9::DATA_COUNT; point++){
         if(get_mu_idx_ratingset(point) < 5){
             user = get_mu_all_usernumber(point);
             movie = get_mu_all_movienumber(point);
@@ -40,16 +40,16 @@ int main(int argc, char* argv[]) {
     
     printf("Saving user/movie biases...\n");
     FILE *outFile;
-    outFile = fopen(SVD_BIAS_FILE, "w");
+    outFile = fopen(NOV9_SVDK_BIAS_FILE, "w");
     float bias;
-    for(int user = 0; user < SVD::USER_COUNT; user++){
-        bias = (((float)SVD::AVG_RATING * SVD::REGUL_BIAS_PARAM) + gsl_matrix_get(userBias, user, 0)) / 
-               (((float)SVD::REGUL_BIAS_PARAM) + gsl_matrix_get(userBias, user, 1)) - SVD::AVG_RATING;
+    for(int user = 0; user < SVDK_Nov9::USER_COUNT; user++){
+        bias = (((float)SVDK_Nov9::AVG_RATING * SVDK_Nov9::REGUL_BIAS_PARAM) + gsl_matrix_get(userBias, user, 0)) / 
+               (((float)SVDK_Nov9::REGUL_BIAS_PARAM) + gsl_matrix_get(userBias, user, 1)) - SVDK_Nov9::AVG_RATING;
         fprintf(outFile,"%f\n",bias);
     }
-    for(int movie = 0; movie < SVD::MOVIE_COUNT; movie++){
-        bias = (((float)SVD::AVG_RATING * SVD::REGUL_BIAS_PARAM) + gsl_matrix_get(movieBias, movie, 0)) /
-               (((float)SVD::REGUL_BIAS_PARAM) + gsl_matrix_get(movieBias, movie, 1)) - SVD::AVG_RATING;
+    for(int movie = 0; movie < SVDK_Nov9::MOVIE_COUNT; movie++){
+        bias = (((float)SVDK_Nov9::AVG_RATING * SVDK_Nov9::REGUL_BIAS_PARAM) + gsl_matrix_get(movieBias, movie, 0)) /
+               (((float)SVDK_Nov9::REGUL_BIAS_PARAM) + gsl_matrix_get(movieBias, movie, 1)) - SVDK_Nov9::AVG_RATING;
         fprintf(outFile,"%f\n",bias);
     }
     printf("Done!");

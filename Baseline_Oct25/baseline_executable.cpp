@@ -1,5 +1,5 @@
 #include <string.h>
-#include "svd.h"
+#include "baseline_oct25.h"
 #include <math.h>
 #include <assert.h>
 //#include <time.h>
@@ -9,33 +9,26 @@ using namespace std;
 #include "../write_data/write_results.h"
 int main(int argc, char* argv[]) {
     if(argc != 2){
-        printf("Proper use is svd_executable [--load] [--refine] [--learn] [--output].\n");
+        printf("Proper use is baseline_executable [--learn] [--output] [--load].\n");
         exit(1);
     }
-    clock_t init, final;
     printf("Creating predictor and loading data...\n");
-    SVD predictor;
-    //init=clock();
-    if(strcmp(argv[1], "--load") == 0){
-        printf("Loading SVD parameters...\n");
-        predictor.remember(3);
-    }else if(strcmp(argv[1], "--refine") == 0){
-        printf("Loading SVD parameters...\n");
-        predictor.remember(3);
-        printf("Refining SVD parameters...\n");
-        predictor.learn(3, true);
-    }else if(strcmp(argv[1], "--learn") == 0){
+    Baseline_Oct25 predictor;
+    if(strcmp(argv[1], "--learn") == 0){
         printf("Learning dataset...\n");
         predictor.learn(3);
+    }else if(strcmp(argv[1], "--load") == 0){
+        printf("Loading baseline...\n");
+        predictor.remember(3);
     }else if(strcmp(argv[1], "--output") == 0){
-        printf("Loading SVD parameters...\n");
+        printf("Loading baseline...\n");
         predictor.remember(3);
         printf("Saving test predictions...\n");
         vector<double> results;
         //load qual data files (user,movie numbers) in mu order
         assert(load_mu_qual_usernumber() == 0);
         assert(load_mu_qual_movienumber() == 0);
-        for(int i=0; i < SVD::SUBMIT_NUM_POINTS; i++) {
+        for(int i=0; i < Baseline_Oct25::SUBMIT_NUM_POINTS; i++) {
             results.push_back(predictor.predict(get_mu_qual_usernumber(i),
                                            (int)get_mu_qual_movienumber(i),0));
         }
@@ -44,7 +37,7 @@ int main(int argc, char* argv[]) {
     printf("Calculating RMSE on probe...\n");
     double RMSE = predictor.rmse_probe();
     printf("Probe RMSE: %f\n", RMSE);
-    printf("Saving SVD parameters...\n");
-    predictor.save_svd(3);
+    printf("Saving baseline parameters...\n");
+    predictor.save_baseline(3);
 }
 
