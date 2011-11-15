@@ -121,7 +121,9 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                     cout << "Starting hidden unit " << j << endl; 
                     for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
                         cout << "(Epoch " << e << ", movie " << i << ", unit " << j << "and rating " << k << ")" << " Starting machine with rating " << k << endl;
+
                         // Calculate Data EV
+                        cout << "Calculating Data EV" << endl;
                         temp_sum = 0;
                         if(current_movie_rating == k) {
                             for(int m = 0; m < user_ratings_[u].size(); ++m) {
@@ -136,6 +138,7 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                         }
                          
                         // Calculate Gibbs Sampled EV = P(v_{ik} = 1 | H) * P(h_j = 1 | V)
+                        cout << "Calculating Sample EV" << endl;
                         temp_sum = 0;
                         for(int m = 0; m < working_ratings.size(); ++m) {
                             for(int n = 1; n <= RBM_HIGHEST_RATING; ++n) {
