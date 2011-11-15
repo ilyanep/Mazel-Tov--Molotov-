@@ -120,7 +120,8 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                 for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
                     cout << "Starting hidden unit " << j << endl; 
                     for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                        cout << "(Epoch " << e << ", movie " << i << ", unit " << j << "and rating " << k << ")" << " Starting machine with rating " << k << endl;
+                        cout << "(Epoch " << e << ", user " << u << "  movie " << i << ", unit " << j << " and rating " << k << ")" << 
+                            " Starting machine with rating " << k << endl;
 
                         // Calculate Data EV
                         cout << "Calculating Data EV" << endl;
@@ -150,9 +151,9 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                         double normalize_sum = 0;
                         double correct_rating = 0;
                         double current_sum = 0;
-                        for(int n = 1; n <= RBM_HIGHEST_RATING; ++k) {
+                        for(int n = 1; n <= RBM_HIGHEST_RATING; ++n) {
                             current_sum = 0;
-                            for(int m = 0; m < RBM_NUM_HIDDEN_UNITS; ++j) {
+                            for(int m = 0; m < RBM_NUM_HIDDEN_UNITS; ++m) {
                                 current_sum += h[m] * weights_[i][m][n];    
                             }
                             normalize_sum += exp(current_sum);
