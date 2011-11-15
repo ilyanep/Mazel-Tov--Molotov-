@@ -120,7 +120,7 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                 for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
                     cout << "Starting hidden unit " << j << endl; 
                     for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                        cout << "Starting machine with rating " << k << endl;
+                        cout << "(Epoch " << e << ", movie " << i << ", unit " << j << "and rating " << k << ")" << " Starting machine with rating " << k << endl;
                         // Calculate Data EV
                         temp_sum = 0;
                         if(current_movie_rating == k) {
