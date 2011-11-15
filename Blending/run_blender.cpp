@@ -12,6 +12,7 @@ using namespace std;
 #include "../SVD_Oct25/svd_oct25.h"
 #include "../SVD_Nov2/svd_nov2.h"
 #include "../SVDK_Nov9/svdk_nov9.h"
+#include "../SVDK_Nov13/svdk_nov13.h"
 #include "../Baseline_Oct25/baseline_oct25.h"
 #include "../Baseline_Nov12/baseline_nov12.h"
 #include "../movie_knn/movie_knn_pearson.h"
@@ -41,6 +42,7 @@ int main() {
     Baseline_Nov12 baseline_nov12;
     SVD_Nov2 svd_nov2;
     SVDK_Nov9 svdk_nov9;
+    SVDK_Nov9 svdk_nov13;
     predictor_vector.push_back(&all_3s);
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
@@ -50,6 +52,7 @@ int main() {
     predictor_vector.push_back(&mknn);
     predictor_vector.push_back(&mknn_pearson);
     predictor_vector.push_back(&svdk_nov9);
+    predictor_vector.push_back(&svdk_nov13);
 
     // Initialize your mom
     cout << "Loarning linear blender" << endl;
