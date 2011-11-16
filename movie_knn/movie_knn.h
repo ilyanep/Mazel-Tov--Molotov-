@@ -168,6 +168,8 @@ public:
      * average, so that we can calculate with all positive weights. 
      */
     virtual double predict(int user, int movie, int time);
+
+    virtual void free_mem();
 };
 
 #endif

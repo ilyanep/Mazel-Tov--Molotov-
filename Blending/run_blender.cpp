@@ -33,8 +33,8 @@ int main() {
     cout << "Initializing predictor vector" << endl;
     vector<IPredictor*> predictor_vector;
     
-    Movie_Knn mknn;
-    Movie_Knn_Pearson mknn_pearson;
+    //Movie_Knn mknn;
+    //Movie_Knn_Pearson mknn_pearson;
     All3Predictor all_3s; 
     SVD_Oct18 svd_oct18;
     SVD_Oct25 svd_oct25;
@@ -42,15 +42,15 @@ int main() {
     Baseline_Nov12 baseline_nov12;
     SVD_Nov2 svd_nov2;
     SVDK_Nov9 svdk_nov9;
-    SVDK_Nov9 svdk_nov13;
+    SVDK_Nov13 svdk_nov13;
     predictor_vector.push_back(&all_3s);
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
     predictor_vector.push_back(&baseline_oct25);
     predictor_vector.push_back(&baseline_nov12);
     predictor_vector.push_back(&svd_nov2);
-    predictor_vector.push_back(&mknn);
-    predictor_vector.push_back(&mknn_pearson);
+    //predictor_vector.push_back(&mknn);
+    //predictor_vector.push_back(&mknn_pearson);
     predictor_vector.push_back(&svdk_nov9);
     predictor_vector.push_back(&svdk_nov13);
 
@@ -63,9 +63,17 @@ int main() {
     cout << "Obtaining predictions" << endl;
     vector<double> res;
     for(int i=0; i < SUBMIT_NUM_POINTS; ++i) {
-        res.push_back(linear_blend_predictor.predict(get_mu_qual_usernumber(i),
-                                                     get_mu_qual_movienumber(i),
-                                                     get_mu_qual_datenumber(i)));
+        res.push_back(0);
+    }
+    for (int j = 0; j < linear_blend_predictor.predictors_.size(); ++j) {
+        printf("predictor number %i\n", j);
+        linear_blend_predictor.predictors_[j]->remember(3); 
+        for(int i=0; i < SUBMIT_NUM_POINTS; ++i) {
+            res[i] += (gsl_vector_get(linear_blend_predictor.aggregator_weights_, j) * linear_blend_predictor.predictors_[j]->predict( get_mu_qual_usernumber(i),
+                                                                                                                          get_mu_qual_movienumber(i),
+                                                                                                                          get_mu_qual_datenumber(i) ) );; 
+        }
+        linear_blend_predictor.predictors_[j]->free_mem();
     }
 
     // Write predictions

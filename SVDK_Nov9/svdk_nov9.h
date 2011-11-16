@@ -41,6 +41,7 @@ class SVDK_Nov9: public IPredictor{
         virtual void learn(int partition);
         virtual double predict(int user, int movie, int time);
         virtual void remember(int partition);
+        virtual void free_mem();
       
     
 };

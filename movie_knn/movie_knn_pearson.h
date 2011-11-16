@@ -83,5 +83,6 @@ public:
      *
      */
     virtual void remember(int partition);
+
 };
 #endif

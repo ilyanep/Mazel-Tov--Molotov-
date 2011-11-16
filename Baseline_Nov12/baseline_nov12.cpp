@@ -13,16 +13,6 @@ Baseline_Nov12::Baseline_Nov12(){
     //userBias: [user-1][intercept slope avgRatingDate multIntercept freqDate0 freqDate1 ... spikeAvg0 spikeAvg1 ... spikeMult0 spikeMult1 ...]
     //movieBias [movie-1][globalBias movieBin0_avg movieBin1_avg ... freqFact0 ... freqFact3]
 
-    //Initially all matrix elements are set to 0.0
-    userBias = gsl_matrix_calloc(USER_COUNT, 4 + NUM_USER_TIME_FACTORS * 3);
-    movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
-    //Set multiplicative factor to 1.0
-    for (int i = 0; i < USER_COUNT; i++)
-        gsl_matrix_set(userBias, i, 3, 1.0);
-
-    freqNum = vector <vector <int> >(); //[user][freq]
-    freqDates = vector <vector <int> >(); //[user][date]
-
     data_loaded = false;
     load_data();
 }
@@ -46,8 +36,25 @@ Baseline_Nov12::Baseline_Nov12(bool loadedData){
         load_data();
 }
 
+void Baseline_Nov12::free_mem(){
+    gsl_matrix_free(userBias);
+    gsl_matrix_free(movieBias);
+    freqNum.clear();
+    freqDates.clear();
+}
+
 
 void Baseline_Nov12::learn(int partition){
+        //Initially all matrix elements are set to 0.0
+    userBias = gsl_matrix_calloc(USER_COUNT, 4 + NUM_USER_TIME_FACTORS * 3);
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
+    //Set multiplicative factor to 1.0
+    for (int i = 0; i < USER_COUNT; i++)
+        gsl_matrix_set(userBias, i, 3, 1.0);
+
+    freqNum = vector <vector <int> >(); //[user][freq]
+    freqDates = vector <vector <int> >(); //[user][date]
+
     printf("Initializing temporal dynamics...\n");
     generate_frequency_table(partition);
     generate_freq_spikes();
@@ -250,6 +257,16 @@ void Baseline_Nov12::save_baseline(int partition){
 
 
 void Baseline_Nov12::remember(int partition){
+        //Initially all matrix elements are set to 0.0
+    userBias = gsl_matrix_calloc(USER_COUNT, 4 + NUM_USER_TIME_FACTORS * 3);
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
+    //Set multiplicative factor to 1.0
+    for (int i = 0; i < USER_COUNT; i++)
+        gsl_matrix_set(userBias, i, 3, 1.0);
+
+    freqNum = vector <vector <int> >(); //[user][freq]
+    freqDates = vector <vector <int> >(); //[user][date]
+
     generate_frequency_table(partition);
     FILE *inFile;
     inFile = fopen(NOV12_BASELINE_FILE, "r");

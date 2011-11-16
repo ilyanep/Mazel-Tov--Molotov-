@@ -36,6 +36,12 @@ class IPredictor {
     // residuals. If the internal state indicates that the learning has not
     // occurred yet, Remember() should be called.
     virtual double predict(int user, int movie, int time) = 0;
+
+    //This method should free up whatever memory the predictor is using
+    //internally so that the blender doesn't use up infinite memory when loading
+    //all the predictors. It is assumed that if the predictor is needed again
+    //either learn or remember will be called.
+    virtual void free_mem() = 0;
 };
 
 #endif
