@@ -9,46 +9,66 @@
 
 using namespace std;
 
+// Hacky
+double** allocate_double_matrix(int a, int b) {
+    double** matrix = (double**)malloc(sizeof(double*) * a);
+    assert(matrix != NULL);
+
+    for(int i=0; i < a; ++i) {
+        matrix[i] = (double*)malloc(sizeof(double) * b);
+        assert(matrix[i] != NULL);
+        for(int j = 0; j < b; ++j) {
+            matrix[i][j] = 0;
+        }
+    }
+    return matrix;
+}
+
+void free_double_matrix(double** matrix, int a, int b) {
+    for(int i=0; i < a; ++i) {
+        free(matrix[i]);
+    }
+    free(matrix);
+}
+
+double*** allocate_triple_matrix(int a, int b, int c) {
+    double*** matrix = (double***)malloc(sizeof(double**) * a);
+    assert(matrix != NULL);
+
+    for(int i=0; i < a; ++i) {
+        matrix[i] = (double**)malloc(sizeof(double*) * b);
+        assert(matrix[i] != NULL);
+        for(int j = 0; j < b; ++j) {
+            matrix[i][j] = (double*)malloc(sizeof(double) * c);
+            assert(matrix[i][j] != NULL);
+            for(int k = 0; k < c; ++k) {
+                matrix[i][j][k] = 0;
+            }
+        }
+    }
+    return matrix;
+}
+
+void free_triple_matrix(double*** matrix, int a, int b, int c) {
+    for(int i=0; i < a; ++i) {
+        for(int j = 0; j < b; ++j) {
+            free(matrix[i][j]);
+        }
+        free(matrix[i]);
+    }
+    free(matrix);
+}
+
 RestrictedBoltzmannMachine::RestrictedBoltzmannMachine() {
     initialized_ = false;
 
-    weights_ = (double***)malloc(sizeof(double**) * RBM_MOVIE_COUNT);
-    assert(weights_ != NULL);
-    delta_weights_ = (double***)malloc(sizeof(double**) * RBM_MOVIE_COUNT);
-    assert(delta_weights_ != NULL);
-
-    // Initialize weights (probably to 0)
-    cout << "Initializing Weights vector" << endl;
-    for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
-        weights_[i] = (double**)malloc(sizeof(double*) * RBM_NUM_HIDDEN_UNITS);
-        assert(weights_[i] != NULL);
-        delta_weights_[i] = (double**)malloc(sizeof(double*) * RBM_NUM_HIDDEN_UNITS);
-        assert(delta_weights_[i] != NULL);
-        for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
-            weights_[i][j] = (double*)malloc(sizeof(double) * (RBM_HIGHEST_RATING + 1));
-            assert(weights_[i][j] != NULL);
-            delta_weights_[i][j] = (double*)malloc(sizeof(double) * (RBM_HIGHEST_RATING + 1));
-            assert(delta_weights_[i][j] != NULL);
-            for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                weights_[i][j][k] = 0;
-                delta_weights_[i][j][k] = 0;
-            }
-        }   
-    }
+    weights_ = allocate_triple_matrix(RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
+    delta_weights_ = allocate_triple_matrix(RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
 }
 
 RestrictedBoltzmannMachine::~RestrictedBoltzmannMachine() {
-    for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
-        for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
-            free(weights_[i][j]);
-            free(delta_weights_[i][j]);
-        }
-        free(weights_[i]);
-        free(delta_weights_[i]);
-    }
-
-    free(weights_);
-    free(delta_weights_);
+    free_triple_matrix(weights_, RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
+    free_triple_matrix(delta_weights_, RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
 }
 
 // Learn the weights and write them to a file
@@ -68,6 +88,12 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                           make_pair(get_um_all_movienumber(p), pow(2, get_um_all_rating(p)))); 
         }
     }
+
+    // Half the memory consumption
+    free_um_all_usernumber();
+    free_um_all_movienumber();
+    free_um_all_rating();
+    free_um_idx_ratingset();
 
     // Hidden units array.
     bool h[RBM_NUM_HIDDEN_UNITS];
@@ -103,11 +129,12 @@ void RestrictedBoltzmannMachine::learn(int partition) {
 
             // Calculate data ev <v_i^kh_j> and hidden unit ev <h_j>, as these can be reused in the next big loop
             cout << "Calculating h evs and data evs" << endl;
-            double hev[RBM_NUM_HIDDEN_UNITS];
-            double data_ev[user_ratings_[u].size()][RBM_HIGHEST_RATING+1][RBM_NUM_HIDDEN_UNITS];
+            double hev[RBM_NUM_HIDDEN_UNITS]; // Sample EV of h_j
+            double*** data_ev = allocate_triple_matrix(user_ratings_[u].size(), RBM_HIGHEST_RATING + 1, RBM_NUM_HIDDEN_UNITS);
+            double** sample_rating_ev = allocate_double_matrix(user_ratings_[u].size(), RBM_HIGHEST_RATING + 1); // Sample EV of V_ik
             cout << "Allocated array alright" << endl;
-            double temp_sum = 0;
-            double temp_sum_sample = 0;
+            double temp_sum = 0; // For the Data EV
+            double temp_sum_sample = 0; // For the Sample EV
             int current_movie_rating;
             // Data EV sum thing
             for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
@@ -129,6 +156,25 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                 }
                 hev[j] = 1 / (1 + exp(-1 * (temp_sum_sample))); 
             }
+            // V_ik EV from sample
+            double current_sum;
+            double normalize_sum;
+            double per_rating_sum[RBM_HIGHEST_RATING + 1];
+            for(int r = 0; r < user_ratings_[u].size(); ++r) {
+                normalize_sum = 0;
+                for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                    current_sum = 0;
+                    for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
+                        current_sum += h[j] * weights_[user_ratings_[u][r].first][j][k];
+                    }
+                    normalize_sum += exp(current_sum);
+                    per_rating_sum[k] = exp(current_sum);
+                }
+                for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                    per_rating_sum[k] /= normalize_sum;
+                    sample_rating_ev[r][k] = per_rating_sum[k];
+                }
+            }
 
             // Calculate deltas for every weight
             bool user_rated_movie = false;
@@ -149,37 +195,28 @@ void RestrictedBoltzmannMachine::learn(int partition) {
 
                         // Calculate Gibbs Sampled EV = P(v_{ik} = 1 | H) * P(h_j = 1 | V)
                         cout << "Calculating Sample EV" << endl;
-                        sampled_ev = hev[j]; 
-
-                        double normalize_sum = 0;
-                        double correct_rating = 0;
-                        double current_sum = 0;
-                        for(int n = 1; n <= RBM_HIGHEST_RATING; ++n) {
-                            current_sum = 0;
-                            for(int m = 0; m < RBM_NUM_HIDDEN_UNITS; ++m) {
-                                current_sum += h[m] * weights_[i][m][n];    
-                            }
-                            normalize_sum += exp(current_sum);
-                            if(k == n) { correct_rating += exp(current_sum); }
-                        }
-                        sampled_ev *= ((correct_rating)/(normalize_sum)); 
+                        sampled_ev = hev[j] * sample_rating_ev[r][k]; 
 
                         // Use these to calculate deltas
-                        delta_weights_[i][j][k] += (1/(double)RBM_USER_COUNT) * RBM_LEARNING_RATE * (cur_data_ev - sampled_ev);  
+                        delta_weights_[i][j][k] += RBM_LEARNING_RATE * (cur_data_ev - sampled_ev);  
                         cout << "Contributed " << delta_weights_[i][j][k] << " to " << i << " " << j << " " << k << endl; 
                     }
                 }
             }
 
-            // Change weights
-            cout << "Applying weight deltas" << endl;
+            free_triple_matrix(data_ev, user_ratings_[u].size(), RBM_HIGHEST_RATING + 1, RBM_NUM_HIDDEN_UNITS);
+            free_double_matrix(sample_rating_ev, user_ratings_[u].size(), RBM_HIGHEST_RATING + 1); // Sample EV of V_ik
+        }
+        // Change weights
+        cout << "Applying weight deltas" << endl;
+        for(int u = 0; u < RBM_USER_COUNT; ++u) { 
             for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
                 for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
                     for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                        weights_[i][j][k] += delta_weights_[i][j][k];
+                        weights_[i][j][k] += (1/(double)RBM_USER_COUNT) * delta_weights_[i][j][k]; // Averaging over users
                     }
                 }
-            } 
+            }
         }
     }
 
@@ -215,6 +252,12 @@ void RestrictedBoltzmannMachine::remember(int partition) {
                           make_pair(get_um_all_movienumber(p), pow(2, get_um_all_rating(p)))); 
         }
     }
+
+    // Half the memory consumption
+    /*free_um_all_usernumber();
+    free_um_all_movienumber();
+    free_um_all_rating();
+    free_um_idx_ratingset(); */
 
     ifstream infile(RBM_PARAM_FILE.c_str());
     string line;
