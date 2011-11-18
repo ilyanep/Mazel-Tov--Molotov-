@@ -112,7 +112,7 @@ void RestrictedBoltzmannMachine::learn(int partition) {
         // Batches of 1000 users
         for(int u = 0; u < RBM_USER_COUNT; ++u) {
             //cout << "Gradient descent for user" << u << " of " << RBM_USER_COUNT << endl;
-            if(u % 50 == 0) { cerr << "Working on user " << u << endl; }
+            if(u % 500 == 0) { cerr << "Working on user " << u << endl; }
 
             for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
                 h[j] = false;
@@ -210,13 +210,11 @@ void RestrictedBoltzmannMachine::learn(int partition) {
             free_double_matrix(sample_rating_ev, user_ratings_[u].size(), RBM_HIGHEST_RATING + 1); // Sample EV of V_ik
         }
         // Change weights
-        //cout << "Applying weight deltas" << endl;
-        for(int u = 0; u < RBM_USER_COUNT; ++u) { 
-            for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
-                for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
-                    for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                        weights_[i][j][k] += (1/(double)RBM_USER_COUNT) * delta_weights_[i][j][k]; // Averaging over users
-                    }
+        cout << "Applying weight deltas" << endl;
+        for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
+            for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
+                for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                    weights_[i][j][k] += (1/(double)RBM_USER_COUNT) * delta_weights_[i][j][k]; // Averaging over users
                 }
             }
         }
