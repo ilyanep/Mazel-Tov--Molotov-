@@ -109,7 +109,10 @@ void RestrictedBoltzmannMachine::learn(int partition) {
             }   
         }
 
-        // Batches of 1000 users
+        initialized_ = true; // Hacky
+        cout << "RMSE at current epoch: " << rmse_probe() << endl;
+        initialized_ = false; // Prevent from making predictions before done.
+
         for(int u = 0; u < RBM_USER_COUNT; ++u) {
             //cout << "Gradient descent for user" << u << " of " << RBM_USER_COUNT << endl;
             if(u % 500 == 0) { cerr << "Working on user " << u << endl; }
@@ -211,7 +214,7 @@ void RestrictedBoltzmannMachine::learn(int partition) {
         }
         // Change weights
         cout << "Applying weight deltas" << endl;
-        for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
+        for(int i = 1; i < RBM_MOVIE_COUNT; ++i) {
             for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
                 for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
                     weights_[i][j][k] += (1/(double)RBM_USER_COUNT) * delta_weights_[i][j][k]; // Averaging over users
