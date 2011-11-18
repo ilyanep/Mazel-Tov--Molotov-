@@ -7,11 +7,12 @@
 #include <utility>
 #include <vector>
 
+
 using namespace std;
 
 typedef long long int64; // Oh god so janky.
 const int RBM_NUM_HIDDEN_UNITS = 100;
-const int RBM_USER_COUNT = 458293;
+const int RBM_USER_COUNT = 458293+1;
 const int RBM_MOVIE_COUNT = 17770;
 const int RBM_TOTAL_NUM_POINTS = 102416306;
 const int RBM_HIGHEST_RATING = 5;

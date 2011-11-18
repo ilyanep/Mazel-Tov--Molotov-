@@ -125,6 +125,7 @@ void RestrictedBoltzmannMachine::learn(int partition) {
 
             cout << "Beginning gibbs sampler" << endl;
             gibbs_sampler(h, &working_ratings, (e / RBM_EPOCHS_PER_T_INCREASE) + RBM_STARTING_T); 
+            cout << "Gibbs sampler complete" << endl;
             assert(working_ratings.size() == user_ratings_[u].size());
 
             // Calculate data ev <v_i^kh_j> and hidden unit ev <h_j>, as these can be reused in the next big loop
@@ -198,7 +199,7 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                         sampled_ev = hev[j] * sample_rating_ev[r][k]; 
 
                         // Use these to calculate deltas
-                        delta_weights_[i][j][k] += RBM_LEARNING_RATE * (cur_data_ev - sampled_ev);  
+                        delta_weights_[i][j][k] += RBM_LEARNING_RATE * (cur_data_ev - sampled_ev); 
                         cout << "Contributed " << delta_weights_[i][j][k] << " to " << i << " " << j << " " << k << endl; 
                     }
                 }
@@ -356,6 +357,7 @@ void RestrictedBoltzmannMachine::gibbs_sampler(bool* h, vector<pair<int, int> >*
             h[j] = sample_hj_given_user_ratings(j, *rating_vector);
         }
 
+        cout << "Reconstructing user data" << endl;
         // Reconstruct data for each user and save into temp array
         rating_int = 0;
         for(int r = 0; r < rating_vector->size(); ++r) {
@@ -367,6 +369,7 @@ void RestrictedBoltzmannMachine::gibbs_sampler(bool* h, vector<pair<int, int> >*
             rating_vector->at(r).second = rating_int;
         }
 
+        cout << "Sampling h_j again" << endl;
         // Sample each hidden unit again and save once more
         for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
             h[j] = sample_hj_given_user_ratings(j, *rating_vector);
