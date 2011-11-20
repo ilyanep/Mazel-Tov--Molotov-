@@ -6,54 +6,75 @@
 #include <iostream>
 #include <math.h>
 #include <string>
+#include <time.h>
 
 using namespace std;
+
+// Hacky
+double** allocate_double_matrix(int a, int b) {
+    double** matrix = (double**)malloc(sizeof(double*) * a);
+    assert(matrix != NULL);
+
+    for(int i=0; i < a; ++i) {
+        matrix[i] = (double*)malloc(sizeof(double) * b);
+        assert(matrix[i] != NULL);
+        for(int j = 0; j < b; ++j) {
+            matrix[i][j] = 0;
+        }
+    }
+    return matrix;
+}
+
+void free_double_matrix(double** matrix, int a, int b) {
+    for(int i=0; i < a; ++i) {
+        free(matrix[i]);
+    }
+    free(matrix);
+}
+
+double*** allocate_triple_matrix(int a, int b, int c) {
+    double*** matrix = (double***)malloc(sizeof(double**) * a);
+    assert(matrix != NULL);
+
+    for(int i=0; i < a; ++i) {
+        matrix[i] = (double**)malloc(sizeof(double*) * b);
+        assert(matrix[i] != NULL);
+        for(int j = 0; j < b; ++j) {
+            matrix[i][j] = (double*)malloc(sizeof(double) * c);
+            assert(matrix[i][j] != NULL);
+            for(int k = 0; k < c; ++k) {
+                matrix[i][j][k] = 0;
+            }
+        }
+    }
+    return matrix;
+}
+
+void free_triple_matrix(double*** matrix, int a, int b, int c) {
+    for(int i=0; i < a; ++i) {
+        for(int j = 0; j < b; ++j) {
+            free(matrix[i][j]);
+        }
+        free(matrix[i]);
+    }
+    free(matrix);
+}
 
 RestrictedBoltzmannMachine::RestrictedBoltzmannMachine() {
     initialized_ = false;
 
-    weights_ = (double***)malloc(sizeof(double**) * RBM_MOVIE_COUNT);
-    assert(weights_ != NULL);
-    delta_weights_ = (double***)malloc(sizeof(double**) * RBM_MOVIE_COUNT);
-    assert(delta_weights_ != NULL);
-
-    // Initialize weights (probably to 0)
-    cout << "Initializing Weights vector" << endl;
-    for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
-        weights_[i] = (double**)malloc(sizeof(double*) * RBM_NUM_HIDDEN_UNITS);
-        assert(weights_[i] != NULL);
-        delta_weights_[i] = (double**)malloc(sizeof(double*) * RBM_NUM_HIDDEN_UNITS);
-        assert(delta_weights_[i] != NULL);
-        for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
-            weights_[i][j] = (double*)malloc(sizeof(double) * (RBM_HIGHEST_RATING + 1));
-            assert(weights_[i][j] != NULL);
-            delta_weights_[i][j] = (double*)malloc(sizeof(double) * (RBM_HIGHEST_RATING + 1));
-            assert(delta_weights_[i][j] != NULL);
-            for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                weights_[i][j][k] = 0;
-                delta_weights_[i][j][k] = 0;
-            }
-        }   
-    }
+    weights_ = allocate_triple_matrix(RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
+    delta_weights_ = allocate_triple_matrix(RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
 }
 
 RestrictedBoltzmannMachine::~RestrictedBoltzmannMachine() {
-    for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
-        for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
-            free(weights_[i][j]);
-            free(delta_weights_[i][j]);
-        }
-        free(weights_[i]);
-        free(delta_weights_[i]);
-    }
-
-    free(weights_);
-    free(delta_weights_);
+    free_triple_matrix(weights_, RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
+    free_triple_matrix(delta_weights_, RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
 }
 
 // Learn the weights and write them to a file
 void RestrictedBoltzmannMachine::learn(int partition) {
-
+    srand(time(NULL));
     // Initialize ratings vector
     cout << "Loading ratings and initializing ratings vector" << endl;
     assert(load_um_all_usernumber() == 0);
@@ -69,6 +90,12 @@ void RestrictedBoltzmannMachine::learn(int partition) {
         }
     }
 
+    // Half the memory consumption
+    free_um_all_usernumber();
+    free_um_all_movienumber();
+    free_um_all_rating();
+    free_um_idx_ratingset();
+
     // Hidden units array.
     bool h[RBM_NUM_HIDDEN_UNITS];
 
@@ -82,9 +109,13 @@ void RestrictedBoltzmannMachine::learn(int partition) {
             }   
         }
 
-        // Batches of 1000 users
+        initialized_ = true; // Hacky
+        cout << "RMSE at current epoch: " << rmse_probe() << endl;
+        initialized_ = false; // Prevent from making predictions before done.
+
         for(int u = 0; u < RBM_USER_COUNT; ++u) {
-            cout << "Gradient descent for user" << u << " of " << RBM_USER_COUNT << endl;
+            //cout << "Gradient descent for user" << u << " of " << RBM_USER_COUNT << endl;
+            if(u % 500 == 0) { cerr << "Working on user " << u << endl; }
 
             for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
                 h[j] = false;
@@ -96,90 +127,103 @@ void RestrictedBoltzmannMachine::learn(int partition) {
                 working_ratings.push_back(make_pair(user_ratings_[u][r].first, user_ratings_[u][r].second));
             } 
 
-            cout << "Beginning gibbs sampler" << endl;
+            //cout << "Beginning gibbs sampler" << endl;
             gibbs_sampler(h, &working_ratings, (e / RBM_EPOCHS_PER_T_INCREASE) + RBM_STARTING_T); 
+            //cout << "Gibbs sampler complete" << endl;
+            assert(working_ratings.size() == user_ratings_[u].size());
+
+            // Calculate data ev <v_i^kh_j> and hidden unit ev <h_j>, as these can be reused in the next big loop
+            //cout << "Calculating h evs and data evs" << endl;
+            double hev[RBM_NUM_HIDDEN_UNITS]; // Sample EV of h_j
+            double*** data_ev = allocate_triple_matrix(user_ratings_[u].size(), RBM_HIGHEST_RATING + 1, RBM_NUM_HIDDEN_UNITS);
+            double** sample_rating_ev = allocate_double_matrix(user_ratings_[u].size(), RBM_HIGHEST_RATING + 1); // Sample EV of V_ik
+            //cout << "Allocated array alright" << endl;
+            double temp_sum = 0; // For the Data EV
+            double temp_sum_sample = 0; // For the Sample EV
+            int current_movie_rating;
+            // Data EV sum thing
+            for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
+                temp_sum = 0;
+                for(int r = 0; r < user_ratings_[u].size(); ++r) {
+                    for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                        temp_sum += ((user_ratings_[u][r].second >> k) & 1) * weights_[user_ratings_[u][r].first][j][k];  
+                    }
+                }
+                temp_sum_sample = 0;
+                for(int r = 0; r < user_ratings_[u].size(); ++r) {
+                    current_movie_rating = (log(working_ratings[r].second) / log(2));
+                    for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                       temp_sum_sample += ((working_ratings[r].second >> k) & 1) * weights_[working_ratings[r].first][j][k];
+
+                       if(current_movie_rating == k) { data_ev[r][k][j] = 1 / (1 + exp(-1 * (temp_sum))); }
+                       else { data_ev[r][k][j] = 0; }
+                    }
+                }
+                hev[j] = 1 / (1 + exp(-1 * (temp_sum_sample))); 
+            }
+            // V_ik EV from sample
+            double current_sum;
+            double normalize_sum;
+            double per_rating_sum[RBM_HIGHEST_RATING + 1];
+            for(int r = 0; r < user_ratings_[u].size(); ++r) {
+                normalize_sum = 0;
+                for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                    current_sum = 0;
+                    for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
+                        current_sum += h[j] * weights_[user_ratings_[u][r].first][j][k];
+                    }
+                    normalize_sum += exp(current_sum);
+                    per_rating_sum[k] = exp(current_sum);
+                }
+                for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                    per_rating_sum[k] /= normalize_sum;
+                    sample_rating_ev[r][k] = per_rating_sum[k];
+                }
+            }
 
             // Calculate deltas for every weight
             bool user_rated_movie = false;
-            int current_movie_rating;
-            double temp_sum;
-            double data_ev;
+            double cur_data_ev;
             double sampled_ev;
-            for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
-                cout << "Starting movie " << i << endl;
-                user_rated_movie = false;
-                for(int r = 0; r < user_ratings_[u].size(); ++r) {
-                    if(user_ratings_[u][r].first == i) { 
-                        user_rated_movie = true;
-                        current_movie_rating = (log(working_ratings[r].second) / log(2));
-                        break; 
-                    }
-                }
-                if (!user_rated_movie) { continue; }
-
+            for(int r = 0; r < user_ratings_[u].size(); ++r) {
+                // In order to avoid re-writing my code
+                int i = user_ratings_[u][r].first;
+                //cout << "Starting movie " << i << endl;
+                current_movie_rating = (log(working_ratings[r].second) / log(2));
                 for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
-                    cout << "Starting hidden unit " << j << endl; 
+                   //cout << "Starting hidden unit " << j << endl; 
                     for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                        cout << "(Epoch " << e << ", movie " << i << ", unit " << j << "and rating " << k << ")" << " Starting machine with rating " << k << endl;
+                        //cout << "(Epoch " << e << ", user " << u << "  movie " << i << ", unit " << j << " and rating " << k << ")" << 
+                        //    " Starting machine with rating " << k << endl;
 
-                        // Calculate Data EV
-                        cout << "Calculating Data EV" << endl;
-                        temp_sum = 0;
-                        if(current_movie_rating == k) {
-                            for(int m = 0; m < user_ratings_[u].size(); ++m) {
-                                for(int n = 1; n <= RBM_HIGHEST_RATING; ++n) {
-                                   temp_sum += ((user_ratings_[u][m].second >> n) & 1) * weights_[user_ratings_[u][m].first][j][n];  
-                                }
-                            }
-                            data_ev = 1 / (1 + exp(-1 * (temp_sum)));
-                        } 
-                        else {
-                            data_ev = 0;
-                        }
-                         
+                        cur_data_ev = data_ev[r][k][j]; 
+
                         // Calculate Gibbs Sampled EV = P(v_{ik} = 1 | H) * P(h_j = 1 | V)
-                        cout << "Calculating Sample EV" << endl;
-                        temp_sum = 0;
-                        for(int m = 0; m < working_ratings.size(); ++m) {
-                            for(int n = 1; n <= RBM_HIGHEST_RATING; ++n) {
-                               temp_sum += ((working_ratings[m].second >> n) & 1) * weights_[working_ratings[m].first][j][n]; 
-                            }
-                        }
-                        sampled_ev = 1 / (1 + exp(-1 * (temp_sum))); 
-
-                        double normalize_sum = 0;
-                        double correct_rating = 0;
-                        double current_sum = 0;
-                        for(int n = 1; n <= RBM_HIGHEST_RATING; ++k) {
-                            current_sum = 0;
-                            for(int m = 0; m < RBM_NUM_HIDDEN_UNITS; ++j) {
-                                current_sum += h[m] * weights_[i][m][n];    
-                            }
-                            normalize_sum += exp(current_sum);
-                            if(k == n) { correct_rating += exp(current_sum); }
-                        }
-                        sampled_ev *= ((correct_rating)/(normalize_sum)); 
+                        //cout << "Calculating Sample EV" << endl;
+                        sampled_ev = hev[j] * sample_rating_ev[r][k]; 
 
                         // Use these to calculate deltas
-                        delta_weights_[i][j][k] += (1/(double)RBM_USER_COUNT) * RBM_LEARNING_RATE * (data_ev - sampled_ev);  
-                        cout << "Contributed " << delta_weights_[i][j][k] << " to " << i << " " << j << " " << k << endl; 
+                        delta_weights_[i][j][k] += RBM_LEARNING_RATE * (cur_data_ev - sampled_ev); 
+                        //cout << "Contributed " << delta_weights_[i][j][k] << " to " << i << " " << j << " " << k << endl; 
                     }
                 }
             }
 
-            // Change weights
-            cout << "Applying weight deltas" << endl;
-            for(int i = 0; i < RBM_MOVIE_COUNT; ++i) {
-                for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
-                    for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
-                        weights_[i][j][k] += delta_weights_[i][j][k];
-                    }
+            free_triple_matrix(data_ev, user_ratings_[u].size(), RBM_HIGHEST_RATING + 1, RBM_NUM_HIDDEN_UNITS);
+            free_double_matrix(sample_rating_ev, user_ratings_[u].size(), RBM_HIGHEST_RATING + 1); // Sample EV of V_ik
+        }
+        // Change weights
+        cout << "Applying weight deltas" << endl;
+        for(int i = 1; i < RBM_MOVIE_COUNT; ++i) {
+            for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
+                for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
+                    weights_[i][j][k] += (1/(double)RBM_USER_COUNT) * delta_weights_[i][j][k]; // Averaging over users
                 }
-            } 
+            }
         }
     }
 
-    cout << "Saving weights to file." << endl;
+    //cout << "Saving weights to file." << endl;
     // Save weights to a file
     ofstream outfile;
     outfile.open(RBM_PARAM_FILE.c_str()); // Defined in the header file
@@ -198,7 +242,7 @@ void RestrictedBoltzmannMachine::learn(int partition) {
 // Read saved weights from a file
 void RestrictedBoltzmannMachine::remember(int partition) {
     // Initialize ratings vector
-    cout << "Loading ratings and initializing ratings vector" << endl;
+    //cout << "Loading ratings and initializing ratings vector" << endl;
     assert(load_um_all_usernumber() == 0);
     assert(load_um_all_movienumber() == 0);
     assert(load_um_all_rating() == 0);
@@ -211,6 +255,12 @@ void RestrictedBoltzmannMachine::remember(int partition) {
                           make_pair(get_um_all_movienumber(p), pow(2, get_um_all_rating(p)))); 
         }
     }
+
+    // Half the memory consumption
+    /*free_um_all_usernumber();
+    free_um_all_movienumber();
+    free_um_all_rating();
+    free_um_idx_ratingset(); */
 
     ifstream infile(RBM_PARAM_FILE.c_str());
     string line;
@@ -277,7 +327,7 @@ bool RestrictedBoltzmannMachine::sample_hj_given_user_ratings(int j, vector<pair
         for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
             temp_sum += ((current_ratings[r].second >> k) & 1) * weights_[current_ratings[r].first][j][k]; 
         }
-    }
+    }    
     double prob = 1 / (1 + exp(-1 * temp_sum));
     return (((double)rand()/(double)RAND_MAX) <= prob); 
 }
@@ -303,12 +353,13 @@ void RestrictedBoltzmannMachine::gibbs_sampler(bool* h, vector<pair<int, int> >*
     // Initialize temp hidden units and user ratings arrays.
     int rating_int = 0;
     for(int i=0; i< num_steps; ++i) {
-        cout << "Gibbs step " << num_steps << endl;
+        //cout << "Gibbs step " << num_steps << endl;
         // Sample each hidden unit and save into temp array
         for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
             h[j] = sample_hj_given_user_ratings(j, *rating_vector);
         }
 
+        //cout << "Reconstructing user data" << endl;
         // Reconstruct data for each user and save into temp array
         rating_int = 0;
         for(int r = 0; r < rating_vector->size(); ++r) {
@@ -320,6 +371,7 @@ void RestrictedBoltzmannMachine::gibbs_sampler(bool* h, vector<pair<int, int> >*
             rating_vector->at(r).second = rating_int;
         }
 
+        //cout << "Sampling h_j again" << endl;
         // Sample each hidden unit again and save once more
         for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
             h[j] = sample_hj_given_user_ratings(j, *rating_vector);
