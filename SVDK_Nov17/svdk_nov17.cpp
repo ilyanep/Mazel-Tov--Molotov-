@@ -2,7 +2,7 @@
 #include "../learning_method.h"
 using namespace std;
 #include "../binary_files/binary_files.h"
-#include "../Baseline_Nov12/baseline_nov12.h"
+#include "../Baseline_Nov19/baseline_nov19.h"
 #include <assert.h>
 #include <gsl/gsl_matrix.h>
 #include "svdk_nov17.h"
@@ -24,6 +24,7 @@ SVDK_Nov17::SVDK_Nov17(){
     userMoviesGenerated = false;
     learn_rate = LEARN_RATE;
     load_data();
+    base_predict = Baseline_Nov19(data_loaded);
     //srand(time(NULL));
 }
 
@@ -80,7 +81,7 @@ void SVDK_Nov17::learn(int partition, bool refining){
         }
         userMoviesGenerated = true;
     }    
-    printf("Sample user rating size: %i\n", (int)userMovies[437].size() );
+    //printf("Sample user rating size: %i\n", (int)userMovies[437].size() );
 
     printf("Initializing ratings cache...\n");
     ratings.reserve(DATA_COUNT);
@@ -212,7 +213,7 @@ double SVDK_Nov17::learn_point(int svd_pt, int user, int movie, double rating, i
 
 void SVDK_Nov17::save_svd(int partition){
     FILE *outFile;
-    outFile = fopen(NOV13_SVDK_PARAM_FILE, "w");
+    outFile = fopen(NOV17_SVDK_PARAM_FILE, "w");
     fprintf(outFile,"%u\n",partition);
     for(int user = 0; user < USER_COUNT; user++){
         for(int i = 0; i < SVD_DIM+1; i++) {
@@ -230,8 +231,8 @@ void SVDK_Nov17::save_svd(int partition){
 }
 
 void SVDK_Nov17::remember(int partition){
-    if(!baseLoaded){
-        printf("Loading base predictor");
+   if(!baseLoaded){
+        printf("Loading baseline predictor...\n");
         base_predict.remember(partition);
         baseLoaded = true;
     }
@@ -247,7 +248,7 @@ void SVDK_Nov17::remember(int partition){
             userMovies[get_um_all_usernumber(point)-1].push_back(get_um_all_movienumber(point)-1);
         }
         userMoviesGenerated = true;
-    }
+    }    
 
     //Initially all matrix factor elements are set to 0.1
     userSVD.reserve(USER_COUNT);
@@ -268,7 +269,7 @@ void SVDK_Nov17::remember(int partition){
     }
 
     FILE *inFile;
-    inFile = fopen(NOV13_SVDK_PARAM_FILE, "r");
+    inFile = fopen(NOV17_SVDK_PARAM_FILE, "r");
     assert(inFile != NULL);
     int load_partition;
     //printf("File opened.\n");

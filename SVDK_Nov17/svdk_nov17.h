@@ -4,14 +4,14 @@
 #include <gsl/gsl_matrix.h>
 #include "../learning_method.h"
 #include <string>
-#include "../Baseline_Nov12/baseline_nov12.h"
+#include "../Baseline_Nov19/baseline_nov19.h"
 #include <vector>
 using namespace std;
-#define NOV13_SVDK_PARAM_FILE "../SVDK_Nov17/svd_params.dta"
+#define NOV17_SVDK_PARAM_FILE "../SVDK_Nov17/svd_params.dta"
 
 class SVDK_Nov17: public IPredictor{
     private:
-        Baseline_Nov12 base_predict;
+        Baseline_Nov19 base_predict;
 
         bool userMoviesGenerated;
         bool baseLoaded;
