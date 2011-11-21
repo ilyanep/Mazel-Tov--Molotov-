@@ -32,7 +32,7 @@ class SVDK_Nov21: public IPredictor{
         double predict_train(int user, int movie, double bias, int svd_pt, double nSum);
         void load_data();
     public:
-        static const int SVD_DIM = 48; //Seems that only first 14 actually matter
+        static const int SVD_DIM = 96;
         static const int USER_COUNT = 458293;
         static const int MOVIE_COUNT = 17770;
         static const int DATA_COUNT = 102416306;

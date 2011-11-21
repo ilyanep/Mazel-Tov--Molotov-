@@ -114,7 +114,7 @@ void SVDK_Nov21::learn(int partition, bool refining){
         userNSum = 0.0;
         userNNum = -1;
         userNChange = 0.0;
-        learn_rate = LEARN_RATE*pow(0.9,(double)p);
+        learn_rate = LEARN_RATE*pow(0.95,(double)p);
         //if(p == SVD_DIM/2)
         //    min_epochs = min_epochs / 2;
         while(oldrmse - rmseo > MIN_RMSE_IMPROVEMENT || k < min_epochs){
