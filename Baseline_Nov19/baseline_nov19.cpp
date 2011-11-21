@@ -1,5 +1,5 @@
 #include <string.h>
-#include "baseline_nov12.h"
+#include "baseline_nov19.h"
 #include <math.h>
 #include <assert.h>
 #include <algorithm>
@@ -9,7 +9,7 @@ using namespace std;
 #include <vector>
 
 int find_element_vect(vector<int> vect, int element);
-Baseline_Nov12::Baseline_Nov12(){
+Baseline_Nov19::Baseline_Nov19(){
     //userBias: [user-1][intercept slope avgRatingDate multIntercept freqDate0 freqDate1 ... spikeAvg0 spikeAvg1 ... spikeMult0 spikeMult1 ...]
     //movieBias [movie-1][globalBias movieBin0_avg movieBin1_avg ... freqFact0 ... freqFact3]
 
@@ -17,7 +17,7 @@ Baseline_Nov12::Baseline_Nov12(){
     load_data();
 }
 
-Baseline_Nov12::Baseline_Nov12(bool loadedData){
+Baseline_Nov19::Baseline_Nov19(bool loadedData){
     //userBias: [user-1][intercept slope avgRatingDate multIntercept freqDate0 freqDate1 ... spikeAvg0 spikeAvg1 ... spikeMult0 spikeMult1 ...]
     //movieBias [movie-1][globalBias movieBin0_avg movieBin1_avg ... freqFact0 ... freqFact3]
 
@@ -36,7 +36,7 @@ Baseline_Nov12::Baseline_Nov12(bool loadedData){
         load_data();
 }
 
-void Baseline_Nov12::free_mem(){
+void Baseline_Nov19::free_mem(){
     gsl_matrix_free(userBias);
     gsl_matrix_free(movieBias);
     freqNum.clear();
@@ -44,7 +44,7 @@ void Baseline_Nov12::free_mem(){
 }
 
 
-void Baseline_Nov12::learn(int partition){
+void Baseline_Nov19::learn(int partition){
         //Initially all matrix elements are set to 0.0
     userBias = gsl_matrix_calloc(USER_COUNT, 4 + NUM_USER_TIME_FACTORS * 3);
     movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
@@ -66,7 +66,7 @@ void Baseline_Nov12::learn(int partition){
     
 }
 
-void Baseline_Nov12::learn_by_gradient_descent(int partition){
+void Baseline_Nov19::learn_by_gradient_descent(int partition){
     
     int k = 0;
     double err;
@@ -74,18 +74,19 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
     double oldrmse = 100.0;
     int userFreq = -1;
     double rateFreq = 0.0;
-    while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT || k < LEARN_EPOCHS){
+    //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT || k < LEARN_EPOCHS){
     //while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT){
+    while(k < LEARN_EPOCHS){
         oldrmse = rmse;
         k++;
         for(int i = 0; i < DATA_COUNT; i++){
-            if(get_mu_idx_ratingset(i) <= partition){
-                int user = get_mu_all_usernumber(i);
-                int movie = get_mu_all_movienumber(i);
-                int date = get_mu_all_datenumber(i);
+            if(get_um_idx_ratingset(i) <= partition){
+                int user = get_um_all_usernumber(i);
+                int movie = get_um_all_movienumber(i);
+                int date = get_um_all_datenumber(i);
                 int movieBin = (date - 1) / MOVIE_BIN_SIZE;
     
-                err = (double)get_mu_all_rating(i) - predictPt(user, movie, date, &userFreq, &rateFreq);
+                err = (double)get_um_all_rating(i) - predictPt(user, movie, date, &userFreq, &rateFreq);
                 
                 double bu = gsl_matrix_get(userBias, user-1, 0);
                 double but;
@@ -107,8 +108,13 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
                 double change_bu = LEARN_RATE_BU * (err - REGUL_BU * bu);
                 gsl_matrix_set(userBias, user-1, 0, bu + change_bu);
 
-                double dateFactor = pow(fabs((double)date - user_avgdate), USER_DATE_EXP - 1.0);
-                double change_au = LEARN_RATE_AU * (err * (USER_DATE_EXP * dateFactor) - REGUL_AU * au);
+                double dateFactor;
+                if((double)date >= user_avgdate)
+                    dateFactor = pow((double)date - user_avgdate, USER_DATE_EXP);
+                else
+                    dateFactor = -1.0*pow(user_avgdate - (double)date, USER_DATE_EXP);
+
+                double change_au = LEARN_RATE_AU * (err * dateFactor - REGUL_AU * au);
                 gsl_matrix_set(userBias, user-1, 1, au + change_au);
     
                 double change_bi = LEARN_RATE_BI * (err * (cu + cut) - REGUL_BI * bi);
@@ -138,13 +144,13 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
 
 }
 
-double Baseline_Nov12::predict(int user, int movie, int date){
+double Baseline_Nov19::predict(int user, int movie, int date){
     int placeholder = -1;
     double placeholder2 = -1;
     return predictPt(user, movie, date, &placeholder, &placeholder2);
 }
 
-double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreqRet, double *rateFreqRet){
+double Baseline_Nov19::predictPt(int user, int movie, int date, int *userFreqRet, double *rateFreqRet){
     //userBias: [user-1][intercept slope avgRatingDate multIntercept freqDate0 freqDate1 ... spikeAvg0 spikeAvg1 ... spikeMult0 spikeMult1 ...]
     //movieBias [movie-1][globalBias movieBin0_avg movieBin1_avg ... freqFact0 ... freqFact3]
 
@@ -207,9 +213,9 @@ double Baseline_Nov12::predictPt(int user, int movie, int date, int *userFreqRet
     return rating;
 }
 
-void Baseline_Nov12::save_baseline(int partition){
+void Baseline_Nov19::save_baseline(int partition){
     FILE *outFile;
-    outFile = fopen(NOV12_BASELINE_FILE, "w");
+    outFile = fopen(NOV19_BASELINE_FILE, "w");
     double intercept, slope, avgdate, multfact, freqdate, spike, multspike;
     fprintf(outFile,"%u\n",partition); 
     for(int user = 0; user < USER_COUNT; user++){
@@ -256,7 +262,7 @@ void Baseline_Nov12::save_baseline(int partition){
 }
 
 
-void Baseline_Nov12::remember(int partition){
+void Baseline_Nov19::remember(int partition){
         //Initially all matrix elements are set to 0.0
     userBias = gsl_matrix_calloc(USER_COUNT, 4 + NUM_USER_TIME_FACTORS * 3);
     movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
@@ -269,7 +275,7 @@ void Baseline_Nov12::remember(int partition){
 
     generate_frequency_table(partition);
     FILE *inFile;
-    inFile = fopen(NOV12_BASELINE_FILE, "r");
+    inFile = fopen(NOV19_BASELINE_FILE, "r");
     assert(inFile != NULL);
     int load_partition;
     fscanf(inFile,"%u",&load_partition);
@@ -316,15 +322,15 @@ void Baseline_Nov12::remember(int partition){
     return;
 }
 
-double Baseline_Nov12::rmse_probe(){
+double Baseline_Nov19::rmse_probe(){
     double RMSE = 0.0;
     int count = 0;
     for(int i = 0; i < DATA_COUNT; i++) {
-        if(get_mu_idx_ratingset(i) == 4){
-            double prediction = predict(get_mu_all_usernumber(i),
-                                                  (int)get_mu_all_movienumber(i),
-                                                  (int)get_mu_all_datenumber(i));
-            double error = (prediction - (double)get_mu_all_rating(i));
+        if(get_um_idx_ratingset(i) == 4){
+            double prediction = predict(get_um_all_usernumber(i),
+                                        (int)get_um_all_movienumber(i),
+                                        (int)get_um_all_datenumber(i));
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }
@@ -333,17 +339,17 @@ double Baseline_Nov12::rmse_probe(){
     return RMSE;
 }    
 
-void Baseline_Nov12::load_data(){
-    assert(load_mu_all_usernumber() == 0);
-    assert(load_mu_all_movienumber() == 0);
-    assert(load_mu_all_rating() == 0);
-    assert(load_mu_idx_ratingset() == 0);
-    assert(load_mu_all_datenumber() == 0);
+void Baseline_Nov19::load_data(){
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_rating() == 0);
+    assert(load_um_idx_ratingset() == 0);
+    assert(load_um_all_datenumber() == 0);
     
     data_loaded = true;
 }
 
-void Baseline_Nov12::generate_frequency_table(int partition){
+void Baseline_Nov19::generate_frequency_table(int partition){
     printf("\tGenerating frequency table...\n");
     freqDates.reserve(USER_COUNT);
     freqNum.reserve(USER_COUNT);
@@ -358,9 +364,15 @@ void Baseline_Nov12::generate_frequency_table(int partition){
     for(int point = 0; point < DATA_COUNT; point++){
         //if(point % 10000000 == 0)
         //    printf("\t\t\t%i percent\n", (int)((double)point*100.0/(double)DATA_COUNT));
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            date = get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            date = get_um_all_datenumber(point);
+            if(user < 1)
+                printf("user... %i at point %i\n", user, point);
+            if(date < 1)
+                printf("date... %i at point %i\n", date, point);
+            
+            assert(user >= 1 && date >= 1);
             int dateIndex = find_element_vect(freqDates[user-1], date);
             if(dateIndex == -1){
                 freqDates[user-1].push_back(date);
@@ -377,7 +389,7 @@ void Baseline_Nov12::generate_frequency_table(int partition){
     }
 }
 
-void Baseline_Nov12::generate_freq_spikes(){
+void Baseline_Nov19::generate_freq_spikes(){
     printf("\tPicking highest frequency dates...\n");
     gsl_matrix *user_days;
     for(int user = 0; user < USER_COUNT; user++){
@@ -408,7 +420,7 @@ void Baseline_Nov12::generate_freq_spikes(){
     }
 }
 
-void Baseline_Nov12::generate_avg_dates(int partition){
+void Baseline_Nov19::generate_avg_dates(int partition){
     printf("\tCalculating average rating dates...\n");
     gsl_matrix *userBias_t;
     userBias_t = gsl_matrix_calloc(USER_COUNT, 2);
@@ -418,9 +430,9 @@ void Baseline_Nov12::generate_avg_dates(int partition){
     int date;
     //userBias_t: [user][date_sum, rating_count]
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            date = (double)get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            date = (double)get_um_all_datenumber(point);
 
             gsl_matrix_set(userBias_t, user-1, 0,
                 gsl_matrix_get(userBias_t, user-1, 0) +
@@ -445,7 +457,7 @@ void Baseline_Nov12::generate_avg_dates(int partition){
     }
 }
 
-int Baseline_Nov12::find_element_vect(vector <int> vect, int element){
+int Baseline_Nov19::find_element_vect(vector <int> vect, int element){
     int index = 0;
     bool found = false;
     while(!found && index < vect.size()){
@@ -460,7 +472,7 @@ int Baseline_Nov12::find_element_vect(vector <int> vect, int element){
         return -1;
 }
 
-int Baseline_Nov12::findMinIndex(gsl_matrix *mat, int numPts){
+int Baseline_Nov19::findMinIndex(gsl_matrix *mat, int numPts){
     int minIndex = 0;
     int minValue = 99999;
     int value = 0;

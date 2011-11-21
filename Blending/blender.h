@@ -12,18 +12,19 @@ using namespace std;
 typedef long long int64;
 
 class LinearBlender : public IPredictor {
-    private:
+    public:
         vector<IPredictor*> predictors_;
         gsl_vector* aggregator_weights_;
         bool initialized_;
         gsl_vector* aggregator_solution(gsl_matrix* predictions_matrix, gsl_vector* ratings_vector,
                                         int64 num_pred_points, int64 num_predictors);
-    public:
+
         LinearBlender(vector<IPredictor*> predictors);
         //learn(), remember(), and predict() are defined in learning_methods.h
         void learn(int partition);
         void remember(int partition);
         double predict(int user, int movie, int date);
+        void free_mem();
 };
 
 #endif

@@ -10,10 +10,6 @@ using namespace std;
 
 int find_element_vect(vector<int> vect, int element);
 Baseline_Oct25::Baseline_Oct25(){
-    //Initially all matrix elements are set to 0.0
-    userBias = gsl_matrix_calloc(USER_COUNT, 3 + NUM_USER_TIME_FACTORS * 2);
-    //userBias = gsl_matrix_calloc(USER_COUNT, 2); 
-    movieBias = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS); 
     data_loaded = false;
     load_data();
 }
@@ -28,8 +24,18 @@ Baseline_Oct25::Baseline_Oct25(bool loadedData){
         load_data();
 }
 
+void Baseline_Oct25::free_mem(){
+    gsl_matrix_free(userBias);
+    gsl_matrix_free(movieBias);
+}
+
 void Baseline_Oct25::learn(int partition){
     assert(data_loaded);
+    //Initially all matrix elements are set to 0.0
+    userBias = gsl_matrix_calloc(USER_COUNT, 3 + NUM_USER_TIME_FACTORS * 2);
+    //userBias = gsl_matrix_calloc(USER_COUNT, 2); 
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS); 
+
     printf("Finding global biases...\n");
     calculate_average_biases(partition);
     printf("--> RMSE = %lf\n", rmse_probe());
@@ -651,6 +657,11 @@ void Baseline_Oct25::save_baseline(int partition){
 
 
 void Baseline_Oct25::remember(int partition){
+    //Initially all matrix elements are set to 0.0
+    userBias = gsl_matrix_calloc(USER_COUNT, 3 + NUM_USER_TIME_FACTORS * 2);
+    //userBias = gsl_matrix_calloc(USER_COUNT, 2); 
+    movieBias = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS); 
+
     FILE *inFile;
     inFile = fopen(OCT25_BASELINE_FILE, "r");
     assert(inFile != NULL);

@@ -1,14 +1,14 @@
-#ifndef BASELINE_NOV12_H
-#define BASELINE_NOV12_H
+#ifndef BASELINE_NOV19_H
+#define BASELINE_NOV19_H
 using namespace std;
 #include <gsl/gsl_matrix.h>
 #include "../learning_method.h"
 #include <string>
 #include <vector>
 
-#define NOV12_BASELINE_FILE "../Baseline_Nov12/mu_baseline.dta"
+#define NOV19_BASELINE_FILE "../Baseline_Nov19/um_baseline.dta"
 
-class Baseline_Nov12: public IPredictor{
+class Baseline_Nov19: public IPredictor{
     private:
         bool data_loaded;
         gsl_matrix *userBias;
@@ -63,8 +63,8 @@ class Baseline_Nov12: public IPredictor{
         static const double REGUL_CUT = 1.90;
         static const double REGUL_BIF = 1.10e-08;
 
-        Baseline_Nov12();
-        Baseline_Nov12(bool loadedData);
+        Baseline_Nov19();
+        Baseline_Nov19(bool loadedData);
         double rmse_probe();
         void save_baseline(int partition);
         virtual void learn(int partition);

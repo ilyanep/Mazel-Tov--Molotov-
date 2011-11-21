@@ -19,6 +19,8 @@ LinearBlender::LinearBlender(vector<IPredictor*> predictors) {
     initialized_ = false;
 }
 
+void LinearBlender::free_mem() {}
+
 // Assuming that all the predictors involved have already learned.
 void LinearBlender::learn(int partition) {
     cout << "Learning the linear blender" << endl;
@@ -28,9 +30,10 @@ void LinearBlender::learn(int partition) {
     assert(load_mu_all_datenumber() == 0);
     assert(load_mu_all_rating() == 0);
     assert(load_mu_idx_ratingset() == 0);
-    for (int i=0; i < predictors_.size(); ++i) {
-        predictors_[i]->remember(LEARNED_PARTITION); 
-    }
+
+    //for (int i=0; i < predictors_.size(); ++i) {
+    //    predictors_[i]->remember(LEARNED_PARTITION); 
+    //}
 
     cout << "Gathering relevant points" << endl;
     // Count how many points we are using to train
@@ -44,13 +47,16 @@ void LinearBlender::learn(int partition) {
     // Fill predictions matrix
     cout << "Filling predictions matrix and ratings vector" << endl;
     gsl_matrix * predictions_matrix = gsl_matrix_alloc(relevant_points_list.size(), predictors_.size());
-    for(int64 i = 0; i < relevant_points_list.size(); ++i) {
-        for(int j = 0; j < predictors_.size(); ++j) {
+    for(int j = 0; j < predictors_.size(); ++j) {
+        printf("predictor number %i\n", j);
+        predictors_[j]->remember(LEARNED_PARTITION); 
+        for(int64 i = 0; i < relevant_points_list.size(); ++i) {
             gsl_matrix_set(predictions_matrix, i, j, 
                            predictors_[j]->predict(get_mu_all_usernumber(relevant_points_list[i]),
                                                   get_mu_all_movienumber(relevant_points_list[i]),
                                                   get_mu_all_datenumber(relevant_points_list[i])));
         }
+        predictors_[j]->free_mem(); 
     }
 
     // Fill ratings vector

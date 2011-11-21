@@ -38,6 +38,9 @@ int Movie_Knn::user_start_indexes[458295] = {-1}; // This will become the array:
  * Initiate an instance of this class. 
  * Sets the learned_partition to default (1)
  */
+
+void Movie_Knn::free_mem(){};
+
 void Movie_Knn::initiate()
 {
     learned_partition   = 1;

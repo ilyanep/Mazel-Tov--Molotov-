@@ -14,7 +14,28 @@ using namespace std;
 
 
 SVDK_Nov13::SVDK_Nov13(){
-    //Initially all matrix elements are set to 0.1
+    data_loaded = false;
+    baseLoaded = false;
+    learn_rate = LEARN_RATE;
+    load_data();
+    //srand(time(NULL));
+}
+
+void SVDK_Nov13::free_mem(){
+    gsl_matrix_free(userSVD);
+    gsl_matrix_free(movieSVD);
+    base_predict.free_mem();
+    baseLoaded = false;
+}
+
+void SVDK_Nov13::learn(int partition){
+    learn(partition, false);
+}
+
+void SVDK_Nov13::learn(int partition, bool refining){
+    assert(data_loaded);
+
+     //Initially all matrix elements are set to 0.1
     userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+1);
     movieSVD = gsl_matrix_calloc(SVD_DIM+1, MOVIE_COUNT);
     assert(userSVD != NULL && movieSVD != NULL);
@@ -28,20 +49,6 @@ SVDK_Nov13::SVDK_Nov13(){
             gsl_matrix_set(movieSVD, p, i, INIT_SVD_VAL);
         }
     }
-    data_loaded = false;
-    baseLoaded = false;
-    learn_rate = LEARN_RATE;
-    load_data();
-    base_predict = Baseline_Nov12(data_loaded);
-    //srand(time(NULL));
-}
-
-void SVDK_Nov13::learn(int partition){
-    learn(partition, false);
-}
-
-void SVDK_Nov13::learn(int partition, bool refining){
-    assert(data_loaded);
 
     if(!baseLoaded){
         printf("Loading baseline predictor...\n");
@@ -167,6 +174,8 @@ void SVDK_Nov13::remember(int partition){
         base_predict.remember(partition);
         baseLoaded = true;
     }
+    userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+1);
+    movieSVD = gsl_matrix_calloc(SVD_DIM+1, MOVIE_COUNT);
     FILE *inFile;
     inFile = fopen(NOV13_SVDK_PARAM_FILE, "r");
     assert(inFile != NULL);

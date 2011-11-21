@@ -13,6 +13,25 @@ using namespace std;
 
 
 SVDK_Nov9::SVDK_Nov9(){
+   
+    data_loaded = false;
+    learn_rate = LEARN_RATE;
+    load_data();
+    srand(time(NULL));
+}
+
+void SVDK_Nov9::free_mem(){
+    gsl_matrix_free(userSVD);
+    gsl_matrix_free(movieSVD);
+}
+
+void SVDK_Nov9::learn(int partition){
+    learn(partition, false);
+}
+
+void SVDK_Nov9::learn(int partition, bool refining){
+    assert(data_loaded);
+
     //Initially all matrix elements are set to 0.1
     userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+2);
     movieSVD = gsl_matrix_calloc(SVD_DIM+2, MOVIE_COUNT);
@@ -26,19 +45,6 @@ SVDK_Nov9::SVDK_Nov9(){
             gsl_matrix_set(movieSVD, p, i, INIT_SVD_VAL);
         }
     }
-    data_loaded = false;
-    learn_rate = LEARN_RATE;
-    load_data();
-    srand(time(NULL));
-}
-
-void SVDK_Nov9::learn(int partition){
-    learn(partition, false);
-}
-
-void SVDK_Nov9::learn(int partition, bool refining){
-    assert(data_loaded);
-
     /* Load bias parameters */
         
     FILE *inFile;
@@ -158,6 +164,8 @@ void SVDK_Nov9::save_svd(int partition){
 }
 
 void SVDK_Nov9::remember(int partition){
+        userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+2);
+    movieSVD = gsl_matrix_calloc(SVD_DIM+2, MOVIE_COUNT);
     FILE *inFile;
     inFile = fopen(NOV9_SVDK_PARAM_FILE, "r");
     assert(inFile != NULL);

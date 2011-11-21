@@ -13,6 +13,26 @@ using namespace std;
 
 
 SVD_Oct25::SVD_Oct25(){
+    data_loaded = false;
+    learn_rate = LEARN_RATE;
+    svd_regul = REGUL_PARAM;
+    load_data();
+    base_predict = Baseline_Oct25(data_loaded);
+    srand(time(NULL));
+}
+
+void SVD_Oct25::free_mem(){
+    gsl_matrix_free(userSVD);
+    gsl_matrix_free(movieSVD);
+}
+
+void SVD_Oct25::learn(int partition){
+    learn(partition, false);
+}
+
+void SVD_Oct25::learn(int partition, bool refining){
+    assert(data_loaded);
+
     //Initially all matrix elements are set to 0.1
     userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM);
     movieSVD = gsl_matrix_calloc(SVD_DIM, MOVIE_COUNT);
@@ -26,20 +46,6 @@ SVD_Oct25::SVD_Oct25(){
             gsl_matrix_set(movieSVD, p, i, INIT_SVD_VAL);
         }
     }
-    data_loaded = false;
-    learn_rate = LEARN_RATE;
-    svd_regul = REGUL_PARAM;
-    load_data();
-    base_predict = Baseline_Oct25(data_loaded);
-    srand(time(NULL));
-}
-
-void SVD_Oct25::learn(int partition){
-    learn(partition, false);
-}
-
-void SVD_Oct25::learn(int partition, bool refining){
-    assert(data_loaded);
 
     /* Load bias parameters */
     printf("Loading baseline...\n");
@@ -132,6 +138,8 @@ void SVD_Oct25::save_svd(int partition){
 }
 
 void SVD_Oct25::remember(int partition){
+    userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM);
+    movieSVD = gsl_matrix_calloc(SVD_DIM, MOVIE_COUNT);
     base_predict.remember(partition);
     FILE *inFile;
     inFile = fopen(SVD_OCT25_PARAM_FILE, "r");

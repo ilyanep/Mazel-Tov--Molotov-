@@ -24,8 +24,6 @@ double *Movie_Knn_Pearson::rhos[5] = {NULL,NULL,NULL,NULL,NULL};// This shall be
                                                                 // Note that there is a set of rhos for each trainable partition. 
 
 
-
-
 /*
  * all inheritors of Movie_Knn must define a movie-movie correlation function, rho,
  * which must be trained on a partition. For the simplest version, let all movies be
