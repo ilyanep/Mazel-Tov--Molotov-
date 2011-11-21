@@ -43,7 +43,7 @@ class SVDK_Nov17: public IPredictor{
         static const int LEARN_EPOCHS_MIN = 40; //Papers suggest a big dip in RMSE if >50?
         static const int REFINE_EPOCHS_MIN = 40; //Feasible time-wise
         static const double MIN_RMSE_IMPROVEMENT = 0.00001; //Arbitrary
-        static const double LEARN_RATE = 0.008; //Suggested optimal by a lot of papers
+        static const double LEARN_RATE = 0.001; //Suggested optimal by a lot of papers
         static const double FEATURE_REGUL_PARAM = 0.015; //Suggested optimal by a lot of papers
         static const double BIAS_REGUL_PARAM = 0.05; //Patarek paper
         static const double REGUL_BIAS_PARAM = 25; //Suggested optimal by a lot of papers

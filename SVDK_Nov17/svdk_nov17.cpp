@@ -133,7 +133,7 @@ void SVDK_Nov17::learn(int partition, bool refining){
         userNSum = 0.0;
         userNNum = -1;
         userNChange = 0.0;
-        learn_rate = LEARN_RATE;
+        learn_rate = LEARN_RATE*pow(0.9,(double)p);
         //if(p == SVD_DIM/2)
         //    min_epochs = min_epochs / 2;
         while(oldrmse - rmseo > MIN_RMSE_IMPROVEMENT || k < min_epochs){
@@ -161,11 +161,11 @@ void SVDK_Nov17::learn(int partition, bool refining){
             rmsein.push_back(sqrt(rmse));
             printf("\tRMSE(in): %lf", sqrt(rmse));
             //printf("\tRMSE(out): %lf\n\n",rmse_probe());
-            learn_rate = learn_rate * 0.9;
+            learn_rate = learn_rate * 0.95;
             rmseo = rmse_probe();
             rmseout.push_back(rmseo);
             printf("\t RMSE(out): %lf\n",rmseo);
-            }
+        }
 
         printf("\t\t\tCaching learned parameters...\n");
         int c_userNNum = -1;
@@ -187,6 +187,10 @@ void SVDK_Nov17::learn(int partition, bool refining){
             double rating = gsl_matrix_get(ratings, point, 0);
             rating += ( gsl_matrix_get(userSVD, user, p + 1) + c_userNSum) *
                       ( gsl_matrix_get(movieSVD, movie, p + 1) );
+            if(rating + INIT_SVD_VAL * INIT_SVD_VAL * (double)(SVD_DIM - p -1) < 1.0)
+                rating = 1.0 - INIT_SVD_VAL * INIT_SVD_VAL * (double)(SVD_DIM - p -1);
+            else if(rating + INIT_SVD_VAL * INIT_SVD_VAL * (double)(SVD_DIM - p -1) > 5.0)
+                rating = 5.0 - INIT_SVD_VAL * INIT_SVD_VAL * (double)(SVD_DIM - p -1);
             gsl_matrix_set(ratings, point, 0, rating);
         }
         //printf("\t\tRMSE(out): %lf\n\n",rmse_probe());
@@ -374,6 +378,10 @@ void SVDK_Nov17::remember(int partition){
     inFile = fopen(NOV17_RATINGS_FILE, "r");
     for(int i = 0; i < DATA_COUNT; i++){
         fscanf(inFile, "%lf", &rating);
+        if(rating < 1.0)
+            rating = 1.0;
+        else if(rating > 5.0)
+            rating = 5.0;
         gsl_matrix_set(ratings, i, 0, rating);
     }
     fclose(inFile);
@@ -444,7 +452,7 @@ double SVDK_Nov17::predict_train(int user, int movie, double bias, int svd_pt, d
     }*/
     rating += ( gsl_matrix_get(userSVD, user, svd_pt + 1) + nSum) *
               ( gsl_matrix_get(movieSVD, movie, svd_pt + 1) );
-    rating += INIT_SVD_VAL * INIT_SVD_VAL * (SVD_DIM - svd_pt -1);
+    rating += INIT_SVD_VAL * INIT_SVD_VAL * (double)(SVD_DIM - svd_pt -1);
     if(rating < 1.0)
         return 1.0;
     else if(rating > 5.0)
