@@ -16,13 +16,13 @@ int main(int argc, char* argv[]) {
     Baseline_Nov19 predictor;
     if(strcmp(argv[1], "--learn") == 0){
         printf("Learning dataset...\n");
-        predictor.learn(4);
+        predictor.learn(3);
     }else if(strcmp(argv[1], "--load") == 0){
         printf("Loading baseline...\n");
-        predictor.remember(4);
+        predictor.remember(3);
     }else if(strcmp(argv[1], "--output") == 0){
         printf("Loading baseline...\n");
-        predictor.remember(4);
+        predictor.remember(3);
         printf("Saving test predictions...\n");
         vector<double> results;
         //load qual data files (user,movie numbers) in mu order
@@ -38,6 +38,6 @@ int main(int argc, char* argv[]) {
     double RMSE = predictor.rmse_probe();
     printf("Probe RMSE: %f\n", RMSE);
     printf("Saving baseline parameters...\n");
-    predictor.save_baseline(4);
+    predictor.save_baseline(3);
 }
 

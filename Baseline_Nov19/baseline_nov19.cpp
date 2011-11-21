@@ -108,8 +108,13 @@ void Baseline_Nov19::learn_by_gradient_descent(int partition){
                 double change_bu = LEARN_RATE_BU * (err - REGUL_BU * bu);
                 gsl_matrix_set(userBias, user-1, 0, bu + change_bu);
 
-                double dateFactor = pow(fabs((double)date - user_avgdate), USER_DATE_EXP - 1.0);
-                double change_au = LEARN_RATE_AU * (err * (USER_DATE_EXP * dateFactor) - REGUL_AU * au);
+                double dateFactor;
+                if((double)date >= user_avgdate)
+                    dateFactor = pow((double)date - user_avgdate, USER_DATE_EXP);
+                else
+                    dateFactor = -1.0*pow(user_avgdate - (double)date, USER_DATE_EXP);
+
+                double change_au = LEARN_RATE_AU * (err * dateFactor - REGUL_AU * au);
                 gsl_matrix_set(userBias, user-1, 1, au + change_au);
     
                 double change_bi = LEARN_RATE_BI * (err * (cu + cut) - REGUL_BI * bi);
