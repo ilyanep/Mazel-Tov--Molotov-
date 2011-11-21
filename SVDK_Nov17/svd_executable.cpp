@@ -33,19 +33,14 @@ int main(int argc, char* argv[]) {
         printf("Saving test predictions...\n");
         vector<double> results;
         //load qual data files (user,movie numbers) in mu order
-        assert(load_mu_qual_usernumber() == 0);
-        assert(load_mu_qual_movienumber() == 0);
+        assert(load_um_qual_usernumber() == 0);
+        assert(load_um_qual_movienumber() == 0);
         for(int i=0; i < SVDK_Nov17::SUBMIT_NUM_POINTS; i++) {
-            results.push_back( predictor.predict(get_mu_qual_usernumber(i),
-                                           (int)get_mu_qual_movienumber(i),
-                                           (int)get_mu_qual_datenumber(i)) );
+            results.push_back( predictor.predict(get_um_qual_usernumber(i),
+                                           (int)get_um_qual_movienumber(i),
+                                           (int)get_um_qual_datenumber(i)) );
         }
         output_results(results);
     }      
-    printf("Calculating RMSE on probe...\n");
-    double RMSE = predictor.rmse_probe();
-    printf("Probe RMSE: %f\n", RMSE);
-    printf("Saving SVD parameters...\n");
-    predictor.save_svd(3);
 }
 

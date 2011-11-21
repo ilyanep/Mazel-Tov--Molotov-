@@ -13,8 +13,8 @@ using namespace std;
 #include <math.h>
 
 /* Matrices:
- * userSVD: [bias factor0 factor1 ... factorN]
- * movieSVD: [bias factor0 factor1 ... factorN nfactor0 nfactor1 ... nfactorN]
+ * (*userSVD): [bias factor0 factor1 ... factorN]
+ * (*movieSVD): [bias factor0 factor1 ... factorN nfactor0 nfactor1 ... nfactorN]
  *
  */
 
@@ -29,8 +29,10 @@ SVDK_Nov17::SVDK_Nov17(){
 }
 
 void SVDK_Nov17::free_mem(){
-    userSVD.clear();
-    movieSVD.clear();
+    gsl_matrix_free(userSVD);
+    gsl_matrix_free(movieSVD);
+    gsl_matrix_free(ratings);
+    userMovies.clear();
     base_predict.free_mem();
     baseLoaded = false;
 }
@@ -43,58 +45,66 @@ void SVDK_Nov17::learn(int partition, bool refining){
     assert(data_loaded);
     double init_value =  INIT_SVD_VAL ;
 
-     //Initially all matrix factor elements are set to 0.1
-    userSVD.reserve(USER_COUNT);
-    movieSVD.reserve(MOVIE_COUNT);
-    for(int i = 0; i < USER_COUNT; i++){
-        userSVD.reserve(SVD_DIM+1);
-        userSVD[i].push_back(0.0);
-        for(int p = 1; p < SVD_DIM+1; p++){
-            userSVD[i].push_back( init_value );
-        }
-    }
-	for(int i = 0; i < MOVIE_COUNT; i++){
-        movieSVD.reserve(SVD_DIM*2+1);
-        movieSVD[i].push_back(0.0);
-        for(int p = 1; p < SVD_DIM*2+1; p++){
-            movieSVD[i].push_back( init_value );
-        }
-    }
+    rmsein.reserve(40 * 64);
+    rmseout.reserve(40 * 64);
 
-    if(!baseLoaded){
-        printf("Loading baseline predictor...\n");
-        base_predict.remember(partition);
-        baseLoaded = true;
-    }
-    
-    printf("Learning SVD...\n");
+    if(!refining){
+         //Initially all matrix factor elements are set to 0.1
+        userMovies = vector < vector <int> > ();
 
-    if(!userMoviesGenerated){
-        printf("Generating list of movies rated by user...\n");
-        userMovies.reserve(USER_COUNT);
-        for(int user = 0; user < USER_COUNT; user++){
-            userMovies.push_back(vector <int> ());
-            userMovies[user].reserve(100);
+        userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+1);
+        movieSVD = gsl_matrix_calloc(MOVIE_COUNT, SVD_DIM*2+1);
+        ratings = gsl_matrix_calloc(DATA_COUNT, 1);
+
+        for(int i = 0; i < USER_COUNT; i++){
+            for(int p = 1; p < SVD_DIM+1; p++){
+                gsl_matrix_set(userSVD, i, p, init_value );
+            }
         }
+	    for(int i = 0; i < MOVIE_COUNT; i++){
+            for(int p = 1; p < SVD_DIM+1; p++){
+                gsl_matrix_set(movieSVD, i, p, init_value );
+            }
+        }
+
+        if(!baseLoaded){
+            printf("Loading baseline predictor...\n");
+            base_predict.remember(partition);
+            baseLoaded = true;
+        }
+        
+        printf("Learning SVD...\n");
+
+        if(!userMoviesGenerated){
+            printf("Generating list of movies rated by user...\n");
+            userMovies.reserve(USER_COUNT);
+            for(int user = 0; user < USER_COUNT; user++){
+                userMovies.push_back(vector <int> ());
+                userMovies[user].reserve(100);
+            }
+            for(int point = 0; point < DATA_COUNT; point++){
+                userMovies[get_um_all_usernumber(point)-1].push_back(get_um_all_movienumber(point)-1);
+            }
+            userMoviesGenerated = true;
+        }    
+
+
+        printf("Initializing bias cache...\n");
         for(int point = 0; point < DATA_COUNT; point++){
-            userMovies[get_um_all_usernumber(point)-1].push_back(get_um_all_movienumber(point)-1);
-        }
-        userMoviesGenerated = true;
-    }    
-    //printf("Sample user rating size: %i\n", (int)userMovies[437].size() );
+                    
+            double rating = base_predict.predict((int)get_um_all_usernumber(point),
+                                                 (int)get_um_all_movienumber(point),
+                                                 (int)get_um_all_datenumber(point));
 
-    printf("Initializing ratings cache...\n");
-    ratings.reserve(DATA_COUNT);
-    for(int point = 0; point < DATA_COUNT; point++){
-        ratings.push_back(base_predict.predict((int)get_um_all_usernumber(point),
-                                               (int)get_um_all_movienumber(point),
-                                               (int)get_um_all_datenumber(point)));
-        ratings[point] += init_value + init_value*pow(userMovies[(int)get_um_all_usernumber(point)-1].size(), 0.5);
-        //if(point % 10000000 == 0)     
-        //   printf("Sample rating: %f\n", ratings[point]);
+            //double rating = AVG_RATING;
+            gsl_matrix_set(ratings, point, 0, rating);
+        }
     }
-    base_predict.free_mem();
-    baseLoaded = false;
+   // for(int user = 1424; user < 1460; user++){
+  //      printf("user %u: usvd1: %f, msvd1: %f\n", user, gsl_matrix_get(userSVD, user, 1), gsl_matrix_get(movieSVD, user, 1));
+  //  }
+    //base_predict.free_mem();
+    //baseLoaded = false;
     
     printf("Learning by SGD...\n");
     int param_start = 0;
@@ -103,7 +113,7 @@ void SVDK_Nov17::learn(int partition, bool refining){
     if(refining){
 		printf("Refining...\n");
         int svd_pt = 0;
-        while(svd_pt < SVD_DIM && userSVD[0][svd_pt] != init_value){
+        while(svd_pt < SVD_DIM && gsl_matrix_get(userSVD, 0, svd_pt+1) != init_value){
             svd_pt++;
         }
         if(svd_pt != SVD_DIM)
@@ -118,21 +128,24 @@ void SVDK_Nov17::learn(int partition, bool refining){
         double err;
         double errsq;
         double rmse = 10.0;
+        double rmseo = 10.0;
         double oldrmse = 100.0;
-        learn_rate = LEARN_RATE;
         userNSum = 0.0;
         userNNum = -1;
         userNChange = 0.0;
+        learn_rate = LEARN_RATE;
         //if(p == SVD_DIM/2)
         //    min_epochs = min_epochs / 2;
-        while(oldrmse - rmse > MIN_RMSE_IMPROVEMENT || k < min_epochs){
-            oldrmse = rmse;
+        while(oldrmse - rmseo > MIN_RMSE_IMPROVEMENT || k < min_epochs){
+        //while(k < min_epochs){
+            oldrmse = rmseo;
             k++;
             errsq = 0.0;
             point_count = 0;
+            printf("\t\tEpoch %u: ", k);
             for(int i = 0; i < DATA_COUNT; i++){
-                if(i%10000000 == 0)
-                    printf("\t\tEpoch %u progress: %i\n", k, (int)(((double)i/(double)DATA_COUNT)*100));
+                //if(i%25000000 == 0)
+                //    printf("\t\t\tProgress: %i percent\n", (int)(((double)i/(double)DATA_COUNT)*100));
                 if(get_um_idx_ratingset(i) <= partition){
                     err = learn_point(p, get_um_all_usernumber(i)-1,
                                          (int)get_um_all_movienumber(i)-1,
@@ -143,71 +156,138 @@ void SVDK_Nov17::learn(int partition, bool refining){
                     //}
                 }
             }
+            assert(point_count != 0);
             rmse = errsq / ((double)point_count);
-            printf("\t\tEpoch %u: RMSE(in): %lf\n", k, sqrt(rmse));
+            rmsein.push_back(sqrt(rmse));
+            printf("\tRMSE(in): %lf", sqrt(rmse));
             //printf("\tRMSE(out): %lf\n\n",rmse_probe());
             learn_rate = learn_rate * 0.9;
+            rmseo = rmse_probe();
+            rmseout.push_back(rmseo);
+            printf("\t RMSE(out): %lf\n",rmseo);
+            }
+
+        printf("\t\t\tCaching learned parameters...\n");
+        int c_userNNum = -1;
+        double c_userNSum = 0.0;
+        for(int point = 0; point < DATA_COUNT; point++){
+            int user = get_um_all_usernumber(point)-1;
+            int movie = (int)get_um_all_movienumber(point)-1;
+            if(c_userNNum != user){
+                //Gather information for new user
+                c_userNNum = user;
+                c_userNSum = 0.0;
+                
+                for(int y = 0; y < userMovies[user].size(); y++){
+                    c_userNSum += gsl_matrix_get(movieSVD, userMovies[user][y], SVD_DIM+p+1);
+                }
+                c_userNSum = c_userNSum / sqrt((double)userMovies[user].size());
+            }
+                                
+            double rating = gsl_matrix_get(ratings, point, 0);
+            rating += ( gsl_matrix_get(userSVD, user, p + 1) + c_userNSum) *
+                      ( gsl_matrix_get(movieSVD, movie, p + 1) );
+            gsl_matrix_set(ratings, point, 0, rating);
         }
-        printf("\t\tRMSE(out): %lf\n\n",rmse_probe());
+        //printf("\t\tRMSE(out): %lf\n\n",rmse_probe());
         //base_predict.free_mem();
         //baseLoaded = false;
-        save_svd(3);
+        save_svd(partition);
     }
-
-    ratings.clear();
+    printf("Done! :)\n");
 }
 
 double SVDK_Nov17::learn_point(int svd_pt, int user, int movie, double rating, int pt_num, bool refining){
-    double err;
-    err = rating - ratings[pt_num];
-
-    //Update user and movie biases for this point
-    double bias_user_old = userSVD[user][0]; 
-    double bias_movie_old = movieSVD[movie][0];
-    double bias_user_old_change = learn_rate * (err - BIAS_REGUL_PARAM * bias_user_old);
-    double bias_movie_old_change = learn_rate * (err - BIAS_REGUL_PARAM * bias_movie_old);
-                 
-    userSVD[user][0] += bias_user_old_change;
-	movieSVD[movie][0] += bias_movie_old_change;
-
-    //Get matrix factors
-    double svd_user_old = userSVD[user][svd_pt+1]; 
-    double svd_movie_old = movieSVD[movie][svd_pt+1];
+    assert(rating == 5 || rating == 4 || rating == 3 || rating == 2 || rating == 1);
 
     //Calculate neighborhood factors   
-    if(userNNum != user){
-        //Update old user
-        double norm = sqrt((double)userMovies[userNNum].size());
-        for(int y = 0; y < userMovies[userNNum].size(); y++){
-            movieSVD[userMovies[userNNum][y]][SVD_DIM+svd_pt+1] += userNChange / norm;
+    if(userNNum != user || userNNum == -1){
+        if(userNNum != -1){
+            //Update old user
+            double norm = sqrt((double)userMovies[userNNum].size());
+            for(int y = 0; y < userMovies[userNNum].size(); y++){
+                gsl_matrix_set(movieSVD, userMovies[userNNum][y], SVD_DIM+svd_pt+1,
+                               gsl_matrix_get(movieSVD, userMovies[userNNum][y], SVD_DIM+svd_pt+1) +
+                               userNChange / norm);
+            }
         }
         //Gather information for new user
-        userNNum = user;
+        userNNum = user ;
         userNSum = 0.0;
         userNChange = 0.0;
+        
         for(int y = 0; y < userMovies[user].size(); y++){
-            userNSum += movieSVD[userMovies[user][y]][SVD_DIM+svd_pt+1];
+            userNSum += gsl_matrix_get(movieSVD, userMovies[user][y], SVD_DIM+svd_pt+1);
         }
-        userNSum = userNSum / sqrt((double)userMovies[user].size());   
+        //printf("NSum:%f -> ", userNSum);
+        userNSum = userNSum / sqrt((double)userMovies[user].size());
+        //printf("%f\n", userNSum);
     }
 
+    //double pred_rating = predict(user+1,movie+1,(int)get_um_all_datenumber(pt_num));
+    //double old_pred_rating = pred_rating;
+
+    double err = (double)rating - predict_train(user, movie, gsl_matrix_get(ratings, pt_num, 0), svd_pt, userNSum + userNChange);
+
+    //Update user and movie biases for this point
+    double bias_user_old = gsl_matrix_get(userSVD, user , 0);
+    double bias_movie_old = gsl_matrix_get(movieSVD, movie, 0);
+
+    double bias_user_old_change = learn_rate * (err - BIAS_REGUL_PARAM * bias_user_old);
+    double bias_movie_old_change = learn_rate * (err - BIAS_REGUL_PARAM * bias_movie_old);
+             
+    gsl_matrix_set(userSVD,user,0, bias_user_old + bias_user_old_change);
+	gsl_matrix_set(movieSVD,movie,0, bias_movie_old + bias_movie_old_change);
+
+    
+
+    //Get matrix factors
+    double svd_user_old = gsl_matrix_get(userSVD, user, svd_pt+1);
+    double svd_movie_old = gsl_matrix_get(movieSVD, movie, svd_pt+1);
+    double svd_user_old_total = svd_user_old + userNSum + userNChange; //Running total before this point
+ 
     //Update matrix factors
-    userNChange += learn_rate * (err * svd_movie_old - FEATURE_REGUL_PARAM * userNSum);
+    double norm = sqrt((double)userMovies[user].size());
+    //double userNChange_change = learn_rate * (err * svd_movie_old - FEATURE_REGUL_PARAM * (userNSum + userNChange));
+    double userNChange_change = learn_rate * (err * svd_movie_old * norm - FEATURE_REGUL_PARAM * (userNSum + userNChange));
+    if(userNChange_change!=userNChange_change)
+        printf("userNChange nan");
+    userNChange += userNChange_change;
     
     double svd_user_old_change = learn_rate * (err * svd_movie_old - FEATURE_REGUL_PARAM * svd_user_old);
-	userSVD[user][svd_pt+1] += svd_user_old_change;
-    double svd_movie_old_change = learn_rate * (err * (svd_user_old + userNSum + userNChange) - FEATURE_REGUL_PARAM * svd_movie_old);
-	movieSVD[movie][svd_pt+1] += svd_movie_old_change;
+    if(svd_user_old_change!=svd_user_old_change)
+        printf("svd_user_old_change nan");
+	gsl_matrix_set(userSVD, user, svd_pt+1, svd_user_old + svd_user_old_change);
 
-    ratings[pt_num] += svd_user_old * svd_movie_old_change +
-                         svd_movie_old * (svd_user_old_change + userNChange) +
-                         (svd_user_old_change + userNChange) * svd_movie_old_change +
-                         bias_user_old_change +
-                         bias_movie_old_change;
-    if(ratings[pt_num] > 5.0)
-        ratings[pt_num] = 5.0;
-    else if(ratings[pt_num] < 1.0)
-        ratings[pt_num] = 1.0;
+    double svd_movie_old_change = learn_rate * (err * svd_user_old_total - FEATURE_REGUL_PARAM * svd_movie_old);
+    if(svd_movie_old_change!=svd_movie_old_change)
+        printf("svd_movie_old_change nan");
+	gsl_matrix_set(movieSVD, movie, svd_pt+1, svd_movie_old + svd_movie_old_change);
+
+    //pred_rating = predict(user+1,movie+1,(int)get_um_all_datenumber(pt_num));    
+    
+    /*if(pt_num == 316620){
+        printf("Params: usvd: %f, msvd: %f, nsvd: %f, ubias: %f, mbias: %f\n", svd_user_old, svd_movie_old, userNSum + userNChange, bias_user_old, bias_movie_old);
+        printf("AFTER: user %i, movie: %i, real rating %f, point %i\n", user+1, movie+1, rating, pt_num);
+    }*/
+
+
+
+
+    if(err!=err){
+        printf("Nan at user %i, point %i\n", user+1, pt_num);
+        printf("Params: usvd: %f, msvd: %f, nsvd: %f, ubias: %f, mbias: %f\n", svd_user_old, svd_movie_old, userNSum + userNChange, bias_user_old, bias_movie_old);
+        exit(1);
+    }
+    /*
+    double err2 = rating - pred_rating;
+    if (pt_num == 316620){
+        printf("BEFORE: user %i, movie: %i, real rating %f, current rating %f, point %i\n", user+1, movie+1, rating, old_pred_rating, pt_num);
+        printf("Params: usvd: %f, msvd: %f, nsvd: %f, ubias: %f, mbias: %f\n", svd_user_old, svd_movie_old, userNSum + userNChange, bias_user_old, bias_movie_old);
+        printf("AFTER: user %i, movie: %i, real rating %f, current rating %f, point %i\n\n", user+1, movie+1, rating, pred_rating, pt_num);
+        //printf("fail\n");
+        //exit(1);
+    }*/
     return err;
 }
 
@@ -217,26 +297,44 @@ void SVDK_Nov17::save_svd(int partition){
     fprintf(outFile,"%u\n",partition);
     for(int user = 0; user < USER_COUNT; user++){
         for(int i = 0; i < SVD_DIM+1; i++) {
-            fprintf(outFile,"%lf ",userSVD[user][i]); 
+            fprintf(outFile,"%lf ",gsl_matrix_get(userSVD, user, i)); 
         }
         fprintf(outFile,"\n");
     }
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
         for(int i = 0; i < SVD_DIM*2+1; i++) {
-            fprintf(outFile,"%lf ",movieSVD[movie][i]);
+            fprintf(outFile,"%lf ",gsl_matrix_get(movieSVD, movie, i));
         }
+    }
+    fclose(outFile);
+    outFile = fopen(NOV17_RMSE_FILE, "w");
+    for(int i = 0; i < rmsein.size(); i++){
+        fprintf(outFile, "%lf\t", rmsein[i]);
+        fprintf(outFile, "%lf\n", rmseout[i]);
+    }
+    fclose(outFile);
+    outFile = fopen(NOV17_RATINGS_FILE, "w");
+    for(int i = 0; i < DATA_COUNT; i++){
+        fprintf(outFile, "%lf\n", gsl_matrix_get(ratings, i, 0));
     }
     fclose(outFile);
     return;
 }
 
 void SVDK_Nov17::remember(int partition){
-   if(!baseLoaded){
+    assert(data_loaded);
+    if(!baseLoaded){
         printf("Loading baseline predictor...\n");
         base_predict.remember(partition);
         baseLoaded = true;
     }
 
+    userMovies = vector < vector <int> > ();
+    userSVD = gsl_matrix_calloc(USER_COUNT, SVD_DIM+1);
+    movieSVD = gsl_matrix_calloc(MOVIE_COUNT, SVD_DIM*2+1);
+    ratings = gsl_matrix_calloc(DATA_COUNT, 1);
+
+    double init_value = INIT_SVD_VAL;
     if(!userMoviesGenerated){
         printf("Generating list of movies rated by user...\n");
         userMovies.reserve(USER_COUNT);
@@ -249,25 +347,7 @@ void SVDK_Nov17::remember(int partition){
         }
         userMoviesGenerated = true;
     }    
-
-    //Initially all matrix factor elements are set to 0.1
-    userSVD.reserve(USER_COUNT);
-    movieSVD.reserve(MOVIE_COUNT);
-    for(int i = 0; i < USER_COUNT; i++){
-        userSVD.reserve(SVD_DIM+1);
-        userSVD[i].push_back(0.0);
-        for(int p = 1; p < SVD_DIM+1; p++){
-            userSVD[i].push_back(0.1);
-        }
-    }
-	for(int i = 0; i < MOVIE_COUNT; i++){
-        movieSVD.reserve(SVD_DIM*2+1);
-        movieSVD[i].push_back(0.0);
-        for(int p = 1; p < SVD_DIM*2+1; p++){
-            movieSVD[i].push_back(0.1);
-        }
-    }
-
+    printf("Loading SVD matrices...\n");
     FILE *inFile;
     inFile = fopen(NOV17_SVDK_PARAM_FILE, "r");
     assert(inFile != NULL);
@@ -279,18 +359,25 @@ void SVDK_Nov17::remember(int partition){
     for(int user = 0; user < USER_COUNT; user++){
         for(int i = 0; i < SVD_DIM+1; i++) {
             fscanf(inFile, "%lf", &g);
-            userSVD[user][i] = g;
+            gsl_matrix_set(userSVD, user, i, g);
 	    }
     }
     for(int movie = 0; movie < MOVIE_COUNT; movie++){
         for(int i = 0; i < SVD_DIM*2+1; i++) {
             fscanf(inFile, "%lf", &g);
-            movieSVD[movie][i] = g;
+            gsl_matrix_set(movieSVD, movie, i, g);
         }
     }
     fclose(inFile);
+    printf("Loading ratings list...\n");
+    double rating = 0.0;
+    inFile = fopen(NOV17_RATINGS_FILE, "r");
+    for(int i = 0; i < DATA_COUNT; i++){
+        fscanf(inFile, "%lf", &rating);
+        gsl_matrix_set(ratings, i, 0, rating);
+    }
+    fclose(inFile);
     return;
-
 }
 
 void SVDK_Nov17::load_data(){
@@ -301,11 +388,6 @@ void SVDK_Nov17::load_data(){
     assert(load_um_idx_ratingset() == 0);
 
     data_loaded = true;
-}
-
-double SVDK_Nov17::predict(int user, int movie, int time){
-    double rating = predict_point(user-1, movie-1, time);
-    return rating;
 }
 
 double SVDK_Nov17::rmse_probe(){
@@ -325,19 +407,44 @@ double SVDK_Nov17::rmse_probe(){
     return RMSE;
 }   
 
+double SVDK_Nov17::predict(int user, int movie, int time){
+    double rating = predict_point(user-1, movie-1, time);
+    return rating;
+}
+
 double SVDK_Nov17::predict_point(int user, int movie, int date){
     double rating = base_predict.predict(user+1, movie+1, date) +
-                    userSVD[user][0] +
-                    movieSVD[movie][0];
+                    gsl_matrix_get(userSVD, user, 0) +
+                    gsl_matrix_get(movieSVD, movie, 0);
     double norm = sqrt((double)userMovies[user].size());
     for (int i = 1; i < SVD_DIM+1; i++){
         double nSum = 0.0;
         for(int y = 0; y < userMovies[user].size(); y++){
-            nSum = nSum + movieSVD[userMovies[user][y]][SVD_DIM+i];
+            nSum = nSum + gsl_matrix_get(movieSVD, userMovies[user][y], SVD_DIM+i);
         }
-        rating = rating + ( userSVD[user][i] + (nSum / norm) ) *
-                          ( movieSVD[movie][i]);
+        rating = rating + ( gsl_matrix_get(userSVD, user, i) + (nSum / norm) ) *
+                          ( gsl_matrix_get(movieSVD, movie, i) );
     }
+    if(rating < 1.0)
+        return 1.0;
+    else if(rating > 5.0)
+        return 5.0;
+    return rating;
+}
+
+
+double SVDK_Nov17::predict_train(int user, int movie, double bias, int svd_pt, double nSum){
+    double rating = bias +
+                    gsl_matrix_get(userSVD, user, 0) +
+                    gsl_matrix_get(movieSVD, movie, 0);
+    double norm = sqrt((double)userMovies[user].size());
+/*   for (int i = 1; i <= svd_pt+1; i++){
+        rating += ( gsl_matrix_get(userSVD, user, i) + nSum) *
+                  ( gsl_matrix_get(movieSVD, movie, i) );
+    }*/
+    rating += ( gsl_matrix_get(userSVD, user, svd_pt + 1) + nSum) *
+              ( gsl_matrix_get(movieSVD, movie, svd_pt + 1) );
+    rating += INIT_SVD_VAL * INIT_SVD_VAL * (SVD_DIM - svd_pt -1);
     if(rating < 1.0)
         return 1.0;
     else if(rating > 5.0)
