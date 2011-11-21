@@ -18,18 +18,18 @@ int main(int argc, char* argv[]) {
     //init=clock();
     if(strcmp(argv[1], "--load") == 0){
         printf("Loading SVD parameters...\n");
-        predictor.remember(4);
+        predictor.remember(3);
     }else if(strcmp(argv[1], "--refine") == 0){
         printf("Loading SVD parameters...\n");
-        predictor.remember(4);
+        predictor.remember(3);
         printf("Refining SVD parameters...\n");
-        predictor.learn(4, true);
+        predictor.learn(3);
     }else if(strcmp(argv[1], "--learn") == 0){
         printf("Learning dataset...\n");
-        predictor.learn(4);
+        predictor.learn(3);
     }else if(strcmp(argv[1], "--output") == 0){
         printf("Loading SVD parameters...\n");
-        predictor.remember(4);
+        predictor.remember(3);
         printf("Saving test predictions...\n");
         vector<double> results;
         //load qual data files (user,movie numbers) in mu order
