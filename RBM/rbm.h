@@ -37,6 +37,7 @@ class RestrictedBoltzmannMachine : public IPredictor {
         void learn(int partition);
         void remember(int partition);
         double predict(int user, int movie, int date);
+        void free_mem();
         // RBM-specific functions
         bool user_has_rated_movie(int user, int movie);
         // Ratings vectors in the following have a 5-bit int with bit i set if rating i is set
