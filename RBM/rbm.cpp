@@ -72,6 +72,12 @@ RestrictedBoltzmannMachine::~RestrictedBoltzmannMachine() {
     free_triple_matrix(delta_weights_, RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
 }
 
+void RestrictedBoltzmannMachine::free_mem() {
+    initialized_ = false;
+    free_triple_matrix(weights_, RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
+    free_triple_matrix(delta_weights_, RBM_MOVIE_COUNT, RBM_NUM_HIDDEN_UNITS, RBM_HIGHEST_RATING + 1);
+}
+
 // Learn the weights and write them to a file
 void RestrictedBoltzmannMachine::learn(int partition) {
     srand(time(NULL));
