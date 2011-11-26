@@ -19,7 +19,10 @@ int main(int argc, char* argv[]) {
     time(&end);
     cout << "Remembering took " << difftime(init, end) << " seconds" << endl;
 
+    time(&init);
     cout << "Starting RMSE on probe calculation." << endl;
     cout << predictor.rmse_probe() << endl;
+    time(&end);
+    cout << "RMSE took " << difftime(init, end) << " seconds" << endl;
     return 0;
 }

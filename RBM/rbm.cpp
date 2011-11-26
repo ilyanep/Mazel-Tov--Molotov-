@@ -290,19 +290,31 @@ void RestrictedBoltzmannMachine::remember(int partition) {
 
 // Return a predictian
 double RestrictedBoltzmannMachine::predict(int user, int movie, int date) {
+    int lookup[33];
+    lookup[2] = 1;
+    lookup[4] = 2;
+    lookup[8] = 3;
+    lookup[16] = 4;
+    lookup[32] = 5; 
+
     assert(initialized_);
     double total_product[6];
     double normalize_sum;
     double temp_sum;
     int current_rating;
+    int current_encoded_rating;
+    int current_size = user_ratings_[user].size();
+    pair<int,int> current_pair;
     normalize_sum = 0;
     for(int k = 1; k <= RBM_HIGHEST_RATING; ++k) {
         total_product[k] = 1;
         for(int j = 0; j < RBM_NUM_HIDDEN_UNITS; ++j) {
             temp_sum = 0;
-            for(int r = 0; r < user_ratings_[user].size(); ++r) {
-                current_rating = ((log(user_ratings_[user][r].second))/log(2));
-                temp_sum += (weights_[user_ratings_[user][r].first][j][current_rating] + 
+            for(int r = 0; r < current_size; ++r) {
+                current_pair = user_ratings_[user][r];
+                assert(current_pair.second == 2 || current_pair.second == 4 || current_pair.second = 8 || current_pair.second = 16 || current_pair.second == 32);
+                current_rating = lookup[current_pair.second];
+                temp_sum += (weights_[current_pair.first][j][current_rating] + 
                              weights_[movie][j][k]); 
             }            
             total_product[k] *= (1+ exp(temp_sum));
@@ -388,7 +400,8 @@ void RestrictedBoltzmannMachine::gibbs_sampler(bool* h, vector<pair<int, int> >*
 double RestrictedBoltzmannMachine::rmse_probe() {
     double RMSE = 0;
     int count = 0;
-    for(int i = 0; i < RBM_TOTAL_NUM_POINTS; ++i) {
+    //for(int i = 0; i < RBM_TOTAL_NUM_POINTS; ++i) {
+    for(int i = 0; i < 300; ++i) {
         if(get_um_idx_ratingset(i) == 4) {
             double prediction = predict(get_um_all_usernumber(i), (int)get_um_all_movienumber(i), (int)get_um_all_datenumber(i));
             double error = (prediction - (double)get_um_all_rating(i));
