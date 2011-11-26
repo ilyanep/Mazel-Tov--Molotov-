@@ -312,7 +312,6 @@ double RestrictedBoltzmannMachine::predict(int user, int movie, int date) {
             temp_sum = 0;
             for(int r = 0; r < current_size; ++r) {
                 current_pair = user_ratings_[user][r];
-                assert(current_pair.second == 2 || current_pair.second == 4 || current_pair.second = 8 || current_pair.second = 16 || current_pair.second == 32);
                 current_rating = lookup[current_pair.second];
                 temp_sum += (weights_[current_pair.first][j][current_rating] + 
                              weights_[movie][j][k]); 
