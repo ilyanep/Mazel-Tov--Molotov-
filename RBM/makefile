@@ -20,4 +20,4 @@ rbm.o: rbm.cpp rbm.h
 	$(MAKE) -C $(@D) $(@F)
 
 clean:
-	rm *.o rbm_executable
+	rm *.o rbm_executable rbm_executable2

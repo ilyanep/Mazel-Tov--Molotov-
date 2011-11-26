@@ -7,7 +7,7 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     if(argc != 1) {
-        cout << "rbm_executable" << endl;
+        cout << "rbm_executable2" << endl;
         return 0;
     }
     time_t init;
