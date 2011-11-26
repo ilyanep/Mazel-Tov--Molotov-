@@ -9,6 +9,7 @@ class All3Predictor : public IPredictor {
     void learn(int partition);
     void remember(int partition);
     double predict(int user, int movie, int date);
+    void free_mem();
 };
 
 #endif

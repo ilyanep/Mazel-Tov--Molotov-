@@ -7,3 +7,4 @@
     void All3Predictor::remember(int partition) { }
 
     double All3Predictor::predict(int user, int movie, int time) { return 3.0; }
+    void All3Predictor::free_mem() { }
