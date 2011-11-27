@@ -15,12 +15,15 @@ const int RBM_NUM_HIDDEN_UNITS = 100;
 const int RBM_USER_COUNT = 458293+1;
 const int RBM_MOVIE_COUNT = 17770+1;
 const int RBM_TOTAL_NUM_POINTS = 102416306;
+const int RBM_QUAL_POINTS = 2749898;
 const int RBM_HIGHEST_RATING = 5;
 const double RBM_LEARNING_RATE = .01;
 const int RBM_EPOCHS_PER_T_INCREASE = 5; // Stolen from some guy's code online
 const int RBM_STARTING_T = 1;
 const int RBM_NUM_EPOCHS = 1;
 const string RBM_PARAM_FILE = "../RBM/rbm_params.dta";
+const string RBM_PREDICTIONS_FILE1 = "../RBM/predict_file_probe.dta";
+const string RBM_PREDICTIONS_FILE2 = "../RBM/predict_file_qual.dta";
 
 class RestrictedBoltzmannMachine : public IPredictor {
     private:
@@ -46,6 +49,7 @@ class RestrictedBoltzmannMachine : public IPredictor {
         bool reconstruct_rating_given_hidden(int movie, int rating, bool* values);
         void gibbs_sampler(bool* h, vector<pair<int, int> >* rating_vector, int num_steps);
         double rmse_probe();
+        void write_predictions_to_file();
 };
 
 #endif
