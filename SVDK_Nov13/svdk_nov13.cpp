@@ -62,7 +62,7 @@ void SVDK_Nov13::learn(int partition, bool refining){
     for(int point = 0; point < DATA_COUNT; point++){
         data_bias[point] = base_predict.predict((int)get_mu_all_usernumber(point),
                                                 (int)get_mu_all_movienumber(point),
-                                                (int)get_mu_all_datenumber(point));
+                                                (int)get_mu_all_datenumber(point),0);
         //if(point % 1000000 == 0)
         //    printf("Original rating: %lf, unbiased rating: %lf \n", (double)get_mu_all_rating(point), unbiased_ratings[point]);
     }
@@ -211,7 +211,7 @@ void SVDK_Nov13::load_data(){
     data_loaded = true;
 }
 
-double SVDK_Nov13::predict(int user, int movie, int time){
+double SVDK_Nov13::predict(int user, int movie, int time, int index){
     double rating = predict_point(user-1, movie-1, time);
     return rating;
 }
@@ -223,7 +223,7 @@ double SVDK_Nov13::rmse_probe(){
         if(get_mu_idx_ratingset(i) == 4){
             double prediction = predict(get_mu_all_usernumber(i),
                                         (int)get_mu_all_movienumber(i),
-                                        (int)get_mu_all_datenumber(i));
+                                        (int)get_mu_all_datenumber(i),0);
             double error = (prediction - (double)get_mu_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
@@ -234,7 +234,7 @@ double SVDK_Nov13::rmse_probe(){
 }   
 
 double SVDK_Nov13::predict_point(int user, int movie, int date){
-    double rating = base_predict.predict(user+1, movie+1, date) +
+    double rating = base_predict.predict(user+1, movie+1, date,0) +
                     gsl_matrix_get(userSVD, user, SVD_DIM) +
                     gsl_matrix_get(movieSVD, SVD_DIM, movie);
     for (int i = 0; i < SVD_DIM; i++){

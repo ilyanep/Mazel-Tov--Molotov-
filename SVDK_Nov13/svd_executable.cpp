@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
         for(int i=0; i < SVDK_Nov13::SUBMIT_NUM_POINTS; i++) {
             results.push_back( predictor.predict(get_mu_qual_usernumber(i),
                                            (int)get_mu_qual_movienumber(i),
-                                           (int)get_mu_qual_datenumber(i)) );
+                                           (int)get_mu_qual_datenumber(i),0) );
         }
         output_results(results);
     }      
