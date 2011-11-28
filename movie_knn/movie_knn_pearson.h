@@ -1,5 +1,6 @@
 #ifndef MOVIE_KNN_MOVIE_KNN_PEARSON_H
 #define MOVIE_KNN_MOVIE_KNN_PEARSON_H
+#include <string>
 #include "movie_knn.h"
 
 
@@ -8,9 +9,12 @@
 class Movie_Knn_Pearson: public Movie_Knn
 {
 protected:
-    static double *rhos[5]; // This shall be the set of all calculated rho values, 
+   static double *rhos[5]; // This shall be the set of all calculated rho values, 
                             // which will be stored on the heap, since it's huge.
                             // Note that there is a set of rhos for each trainable partition.
+    
+    //the filename to which we will store the rhos. 
+    virtual string filename(int partition);
     
     /*
      * OK boys and girls, this is the most computationally intense part of Movie_Knn_Pearson.

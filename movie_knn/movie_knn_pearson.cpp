@@ -81,6 +81,15 @@ double Movie_Knn_Pearson::rho(int movie_i, int movie_j, int partition)
 }
 
 
+string Movie_Knn_Pearson::filename(int partition)
+{
+    stringstream ss;
+    ss << partition;
+    return string("Movie_KNN_rhos_pearson_partition_")+ ss.str()+string(".bin");
+    
+}
+
+
 /*
  * OK boys and girls, this is the most computationally intense part of Movie_Knn_Pearson.
  * we're going to calculate correlation coefficients for all of the pairs of movies. 
@@ -111,24 +120,21 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
     }
     
     // Generate the name of the file in which these rhos ought to be stored. 
-    stringstream ss;
-    ss << partition;
-    string filename = string("Movie_KNN_rhos_pearson_partition_")+ ss.str()+string(".bin");
     
     // If this data file exists and is complete (all the rhos have been generated), load them up.
-    if (data_file_exists(filename) && file_size(filename) == sizeof(double) * (((num_movies - 1)*num_movies)/2))
+    if (data_file_exists(filename(partition)) && file_size(filename(partition)) == sizeof(double) * (((num_movies - 1)*num_movies)/2))
     {
-        rhos[partition] = (double *) file_bytes(filename);
+        rhos[partition] = (double *) file_bytes(filename(partition));
         
     // If the data file does not exist or is incomplete, let's get ready to generate!
     } else {
         // If the data file exists, and so it's not done yet, load it up, and remember how big it is
         int start_index = 0;
         double *old_rhos = NULL;
-        if (data_file_exists(filename))
+        if (data_file_exists(filename(partition)))
         {
-            start_index = (file_size(filename))/sizeof(double);
-            old_rhos = (double *) file_bytes(filename);
+            start_index = (file_size(filename(partition)))/sizeof(double);
+            old_rhos = (double *) file_bytes(filename(partition));
         }
         
         // Allocate some memory for the new, complete array of rhos
@@ -145,7 +151,7 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
         // for all l, x_i[l] and x_j[l] are by the same user.
         // see BigChaos for details, or wikipedia's Pearson article. 
         int ell;
-        char x_ij[num_users * 2];
+        double x_ij[num_users * 2];
         double average_x_i;
         double average_x_j;
         int l;
@@ -155,8 +161,8 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
         int index = 0;
         int progress_counter = 0; // the progress_counter and _index stuff is just to print out progress.
         int progress_index = 0;
-        int sum_x_i;
-        int sum_x_j;
+        double sum_x_i;
+        double sum_x_j;
         double x_ij_i;
         double x_ij_j;
         for (int i=1; i <=num_movies; i++)
@@ -186,15 +192,15 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
                             sum_x_i += x_ij[2*l  ];
                             sum_x_j += x_ij[2*l+1];
                         }
-                        average_x_i = double(sum_x_i) /  ell;
-                        average_x_j = double(sum_x_j) /  ell;
+                        average_x_i = (sum_x_i) /  ell;
+                        average_x_j = (sum_x_j) /  ell;
                         numerator = 0.0;
                         denominator_i=0.0;
                         denominator_j=0.0;
                         for (l=0; l< ell; l++)
                         {
-                            x_ij_i = double(x_ij[2*l]);
-                            x_ij_j = double(x_ij[2*l + 1]);
+                            x_ij_i = x_ij[2*l];
+                            x_ij_j = x_ij[2*l + 1];
                             numerator += (x_ij_i- average_x_i)*(x_ij_j - average_x_j);
                             denominator_i += pow((x_ij_i- average_x_i),2);
                             denominator_j += pow((x_ij_j- average_x_j),2);
@@ -213,7 +219,7 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
                     progress_counter ++;
                     if ((progress_counter % 1000 == 0) && (index > start_index))
                     {
-                        array_to_file((char *)rhos[partition], sizeof(double) * index, filename); // every 1%, write to file
+                        array_to_file((char *)rhos[partition], sizeof(double) * index, filename(partition)); // every 1%, write to file
                     }
                 }
                 index ++;
@@ -223,7 +229,7 @@ int Movie_Knn_Pearson::force_generate_rhos(int partition)
         free(old_rhos); // make sure to clear all the old rhos from the pre-stored file, if that exists. 
         
         // store the calculated rhos values in their file, return the success of that operation. 
-        return array_to_file((char *)rhos[partition], sizeof(double) * (((num_movies - 1)*num_movies)/2), filename);
+        return array_to_file((char *)rhos[partition], sizeof(double) * (((num_movies - 1)*num_movies)/2), filename(partition));
     }
     return 0;
 }

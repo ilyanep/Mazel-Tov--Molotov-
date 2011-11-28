@@ -173,14 +173,14 @@ int Movie_Knn::number_users_rated(int movie_i, int movie_j, int partition)
  *    pairs[2*l]   = a rating of movie_i
  *    pairs[2*l+1] = a rating of movie_j by the same user
  * 
- * pairs:       the char[] to which to write the ratings of these movies
+ * pairs:       the double[] to which to write the ratings of these movies
  * movie_i:     one movie involved
  * movie_j:     the other movie involved
  * partition:   an integer 1-5, we're only talking this partition or less
  *
  * return:      The number of users that have rated both movie_i and movie_j in this partition or less
  */
-int Movie_Knn::rating_pairs(char *pairs, int movie_i, int movie_j, int partition)
+int Movie_Knn::rating_pairs(double *pairs, int movie_i, int movie_j, int partition)
 {
     initialize_movie_start_indexes();
     int l = 0;
@@ -196,8 +196,8 @@ int Movie_Knn::rating_pairs(char *pairs, int movie_i, int movie_j, int partition
                 partition >= get_mu_idx_ratingset(i) && 
                 partition >= get_mu_idx_ratingset(j))
             {
-                pairs[2*l] = get_mu_all_rating(i);
-                pairs[2*l + 1] = get_mu_all_rating(j);
+                pairs[2*l] = double(get_mu_all_rating(i));
+                pairs[2*l + 1] = double(get_mu_all_rating(j));
                 l++;
             }
             j++;
