@@ -89,7 +89,7 @@ void Baseline_Oct25::calculate_user_time_spikes(int partition){
             if(foundDate){
                 movie = get_mu_all_movienumber(point);
                 ratingErr = (double)get_mu_all_rating(point) - 
-                            predict(user, movie, date);
+                            predict(user, movie, date,0);
                 gsl_matrix_set(user_days, user-1, datePoint,
                     gsl_matrix_get(user_days, user-1, datePoint)+
                     ratingErr);
@@ -540,7 +540,7 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
                 dateFactor = -1.0*pow(avgdate - (double)date, USER_DATE_EXP);
 
             covxy = gsl_matrix_get(userBias_t, user-1, 2) +
-                (((double)get_mu_all_rating(point) - predict(user, movie, date) - avgerr) *
+                (((double)get_mu_all_rating(point) - predict(user, movie, date,0) - avgerr) *
                 (dateFactor - avgtransdate));
             
 
@@ -583,7 +583,7 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
     gsl_matrix_free(userBias_t);
 }
 
-double Baseline_Oct25::predict(int user, int movie, int date){
+double Baseline_Oct25::predict(int user, int movie, int date, int index){
     //Calculate movie factor from bin
     int movieBin = (date - 1) / MOVIE_BIN_SIZE;
     double movieFactor = gsl_matrix_get(movieBias, movie-1, movieBin);
@@ -704,7 +704,7 @@ double Baseline_Oct25::rmse_probe(){
         if(get_mu_idx_ratingset(i) == 4){
             double prediction = predict(get_mu_all_usernumber(i),
                                                   (int)get_mu_all_movienumber(i),
-                                                  (int)get_mu_all_datenumber(i));
+                                                  (int)get_mu_all_datenumber(i),0);
             double error = (prediction - (double)get_mu_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
