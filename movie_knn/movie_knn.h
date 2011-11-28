@@ -167,7 +167,7 @@ public:
      * Note that for negative correlaitons, we reverse the rating (6-rating) when taking this
      * average, so that we can calculate with all positive weights. 
      */
-    virtual double predict(int user, int movie, int time);
+    virtual double predict(int user, int movie, int time, int placeholder);
 
     virtual void free_mem();
 };

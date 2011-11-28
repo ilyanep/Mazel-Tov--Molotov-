@@ -302,7 +302,7 @@ void  Movie_Knn::remember(int partition)
  * Note that for negative correlaitons, we reverse the rating (6-rating) when taking this
  * average, so that we can calculate with all positive weights. 
  */
-double Movie_Knn::predict(int user, int movie, int time)
+double Movie_Knn::predict(int user, int movie, int time, int placeholder)
 {
     initialize_user_start_indexes();
     double numerator = 0.0;
