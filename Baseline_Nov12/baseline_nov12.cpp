@@ -138,7 +138,7 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
 
 }
 
-double Baseline_Nov12::predict(int user, int movie, int date){
+double Baseline_Nov12::predict(int user, int movie, int date, int index){
     int placeholder = -1;
     double placeholder2 = -1;
     return predictPt(user, movie, date, &placeholder, &placeholder2);
@@ -323,7 +323,7 @@ double Baseline_Nov12::rmse_probe(){
         if(get_mu_idx_ratingset(i) == 4){
             double prediction = predict(get_mu_all_usernumber(i),
                                                   (int)get_mu_all_movienumber(i),
-                                                  (int)get_mu_all_datenumber(i));
+                                                  (int)get_mu_all_datenumber(i),0);
             double error = (prediction - (double)get_mu_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
