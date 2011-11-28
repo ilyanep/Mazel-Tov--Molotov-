@@ -8,7 +8,7 @@ class All3Predictor : public IPredictor {
     // Learn(), Remember(), and Predict() are described in learning_method.h
     void learn(int partition);
     void remember(int partition);
-    double predict(int user, int movie, int date);
+    double predict(int user, int movie, int date, int index);
     void free_mem();
 };
 
