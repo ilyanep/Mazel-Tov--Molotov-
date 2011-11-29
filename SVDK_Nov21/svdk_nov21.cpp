@@ -345,10 +345,8 @@ double SVDK_Nov21::rmse_probe(){
     return RMSE;
 }   
 
-double SVDK_Nov21::predict(int user, int movie, int time){
-    double rating = predict_point(user-1, movie-1, time);
-    assert(false); //should not be called
-    return rating;
+double SVDK_Nov21::predict(int user, int movie, int time, int index){
+    return gsl_matrix_get(ratings, index, 0);
 }
 
 double SVDK_Nov21::predict_point(int user, int movie, int date){
