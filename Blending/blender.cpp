@@ -25,11 +25,11 @@ void LinearBlender::free_mem() {}
 void LinearBlender::learn(int partition) {
     cout << "Learning the linear blender" << endl;
     cout << "Loading all data and remembering the predictors" << endl;
-    assert(load_mu_all_usernumber() == 0);
-    assert(load_mu_all_movienumber() == 0);
-    assert(load_mu_all_datenumber() == 0);
-    assert(load_mu_all_rating() == 0);
-    assert(load_mu_idx_ratingset() == 0);
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_datenumber() == 0);
+    assert(load_um_all_rating() == 0);
+    assert(load_um_idx_ratingset() == 0);
 
     //for (int i=0; i < predictors_.size(); ++i) {
     //    predictors_[i]->remember(LEARNED_PARTITION); 
@@ -39,7 +39,7 @@ void LinearBlender::learn(int partition) {
     // Count how many points we are using to train
     vector<int64> relevant_points_list;
     for (int64 i=0; i < ALL_POINTS_SIZE; ++i) {
-        if (get_mu_idx_ratingset(i) == partition) {
+        if (get_um_idx_ratingset(i) == partition) {
             relevant_points_list.push_back(i);
         }   
     }
@@ -49,21 +49,23 @@ void LinearBlender::learn(int partition) {
     gsl_matrix * predictions_matrix = gsl_matrix_alloc(relevant_points_list.size(), predictors_.size());
     for(int j = 0; j < predictors_.size(); ++j) {
         printf("predictor number %i\n", j);
-        predictors_[j]->remember(LEARNED_PARTITION); 
+        predictors_[j]->remember(LEARNED_PARTITION);
+        printf("\tPredictor loaded. Gathering predictions...\n");
         for(int64 i = 0; i < relevant_points_list.size(); ++i) {
             gsl_matrix_set(predictions_matrix, i, j, 
-                           predictors_[j]->predict(get_mu_all_usernumber(relevant_points_list[i]),
-                                                  get_mu_all_movienumber(relevant_points_list[i]),
-                                                  get_mu_all_datenumber(relevant_points_list[i]),
+                           predictors_[j]->predict(get_um_all_usernumber(relevant_points_list[i]),
+                                                  get_um_all_movienumber(relevant_points_list[i]),
+                                                  get_um_all_datenumber(relevant_points_list[i]),
                                                   relevant_points_list[i]));
         }
+        printf("\tFreeing predictor...\n");
         predictors_[j]->free_mem(); 
     }
 
     // Fill ratings vector
     gsl_vector * ratings_vector = gsl_vector_alloc(relevant_points_list.size());
     for(int64 i = 0; i < relevant_points_list.size(); ++i) {
-        gsl_vector_set(ratings_vector, i, get_mu_all_rating(relevant_points_list[i]));
+        gsl_vector_set(ratings_vector, i, get_um_all_rating(relevant_points_list[i]));
     }
 
     aggregator_weights_ = aggregator_solution(predictions_matrix, ratings_vector, relevant_points_list.size(),
