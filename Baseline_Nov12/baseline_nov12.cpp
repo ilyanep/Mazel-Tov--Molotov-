@@ -79,13 +79,13 @@ void Baseline_Nov12::learn_by_gradient_descent(int partition){
         oldrmse = rmse;
         k++;
         for(int i = 0; i < DATA_COUNT; i++){
-            if(get_mu_idx_ratingset(i) <= partition){
-                int user = get_mu_all_usernumber(i);
-                int movie = get_mu_all_movienumber(i);
-                int date = get_mu_all_datenumber(i);
+            if(get_um_idx_ratingset(i) <= partition){
+                int user = get_um_all_usernumber(i);
+                int movie = get_um_all_movienumber(i);
+                int date = get_um_all_datenumber(i);
                 int movieBin = (date - 1) / MOVIE_BIN_SIZE;
     
-                err = (double)get_mu_all_rating(i) - predictPt(user, movie, date, &userFreq, &rateFreq);
+                err = (double)get_um_all_rating(i) - predictPt(user, movie, date, &userFreq, &rateFreq);
                 
                 double bu = gsl_matrix_get(userBias, user-1, 0);
                 double but;
@@ -320,11 +320,11 @@ double Baseline_Nov12::rmse_probe(){
     double RMSE = 0.0;
     int count = 0;
     for(int i = 0; i < DATA_COUNT; i++) {
-        if(get_mu_idx_ratingset(i) == 4){
-            double prediction = predict(get_mu_all_usernumber(i),
-                                                  (int)get_mu_all_movienumber(i),
-                                                  (int)get_mu_all_datenumber(i),0);
-            double error = (prediction - (double)get_mu_all_rating(i));
+        if(get_um_idx_ratingset(i) == 4){
+            double prediction = predict(get_um_all_usernumber(i),
+                                                  (int)get_um_all_movienumber(i),
+                                                  (int)get_um_all_datenumber(i),0);
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }
@@ -334,11 +334,11 @@ double Baseline_Nov12::rmse_probe(){
 }    
 
 void Baseline_Nov12::load_data(){
-    assert(load_mu_all_usernumber() == 0);
-    assert(load_mu_all_movienumber() == 0);
-    assert(load_mu_all_rating() == 0);
-    assert(load_mu_idx_ratingset() == 0);
-    assert(load_mu_all_datenumber() == 0);
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_rating() == 0);
+    assert(load_um_idx_ratingset() == 0);
+    assert(load_um_all_datenumber() == 0);
     
     data_loaded = true;
 }
@@ -358,9 +358,9 @@ void Baseline_Nov12::generate_frequency_table(int partition){
     for(int point = 0; point < DATA_COUNT; point++){
         //if(point % 10000000 == 0)
         //    printf("\t\t\t%i percent\n", (int)((double)point*100.0/(double)DATA_COUNT));
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            date = get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            date = get_um_all_datenumber(point);
             int dateIndex = find_element_vect(freqDates[user-1], date);
             if(dateIndex == -1){
                 freqDates[user-1].push_back(date);
@@ -418,9 +418,9 @@ void Baseline_Nov12::generate_avg_dates(int partition){
     int date;
     //userBias_t: [user][date_sum, rating_count]
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            date = (double)get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            date = (double)get_um_all_datenumber(point);
 
             gsl_matrix_set(userBias_t, user-1, 0,
                 gsl_matrix_get(userBias_t, user-1, 0) +
