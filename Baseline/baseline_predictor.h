@@ -58,7 +58,7 @@ class Baseline: public IPredictor{
         double rmse_probe();
         void save_baseline(int partition);
         virtual void learn(int partition);
-        virtual double predict(int user, int movie, int time);
+        virtual double predict(int user, int movie, int time, int index);
         virtual void remember(int partition);
       
     

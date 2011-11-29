@@ -577,7 +577,7 @@ void Baseline::calculate_user_time_gradient(int partition){
     gsl_matrix_free(userBias_t);
 }
 
-double Baseline::predict(int user, int movie, int date){
+double Baseline::predict(int user, int movie, int date, int index){
     //Calculate movie factor from bin
     int movieBin = (date - 1) / MOVIE_BIN_SIZE;
     double movieFactor = gsl_matrix_get(movieBias, movie-1, movieBin);
