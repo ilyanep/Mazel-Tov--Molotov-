@@ -27,6 +27,9 @@ timeSVDpp_Nov23::timeSVDpp_Nov23(){
 
 void timeSVDpp_Nov23::free_mem(){
     gsl_matrix_free(ratings);
+    gsl_matrix_free(userBias);
+    gsl_matrix_free(movieBias);
+    gsl_matrix_free(avgRatingDates);
 }
 
 void timeSVDpp_Nov23::learn(int partition){
@@ -456,7 +459,60 @@ void timeSVDpp_Nov23::save(int svd_pt){
 void timeSVDpp_Nov23::remember(int partition){
     assert(data_loaded);
 
+    freqNum = vector <vector <int> >(); //[user][freq]
+    freqDates = vector <vector <int> >(); //[user][date]
+    avgRatingDates = gsl_matrix_calloc(USER_COUNT, 1);
+    userFreqSpikes = gsl_matrix_calloc(USER_COUNT, NUM_USER_TIME_FACTORS);
+
+    printf("Initializing temporal dynamics...\n");
+    generate_frequency_table(partition);
+    generate_freq_spikes();
+    generate_avg_dates(partition);
+
+    printf("Initializing ratings cache...\n");
     ratings = gsl_matrix_calloc(DATA_COUNT, 3);
+        
+    for(int point = 0; point < DATA_COUNT; point++){
+                
+        double rating = AVG_RATING;
+        //rating += INIT_SVD_VAL * INIT_SVD_VAL * (double)SVD_DIM;
+         
+        //Check if user has a spike at that moment
+        int freqdate = 0;
+        int datePoint = 0;
+        double spikeFactor = 0.0;
+        bool found = false;
+        int spikeDate;
+        int user = get_um_all_usernumber(point)-1;
+        int date = get_um_all_datenumber(point);
+        while(!found && datePoint < NUM_USER_TIME_FACTORS){
+            freqdate = gsl_matrix_get(userFreqSpikes, user, datePoint);
+            if(freqdate == date)
+                found = true;
+            else
+                datePoint++;
+        }
+        if(found){
+            spikeDate = datePoint;
+        }else{
+            spikeDate = -1;
+        }
+        int dateIndex = find_element_vect(freqDates[user], date);
+        double rateFreq;
+        if(dateIndex == -1)
+            rateFreq = 0.0;
+        else
+            rateFreq = log((double)freqNum[user][dateIndex]) / LN_LOG_BASE;
+        if (rateFreq > 3.0)
+            rateFreq = 3.0;
+        gsl_matrix_set(ratings, point, 0, rating);
+        gsl_matrix_set(ratings, point, 1, spikeDate);
+        gsl_matrix_set(ratings, point, 2, (int)(20 * rateFreq));
+    }
+    
+    gsl_matrix_free(userFreqSpikes);
+    freqNum.clear();
+    freqDates.clear();
 
     double init_value = INIT_SVD_VAL;
     
@@ -468,14 +524,10 @@ void timeSVDpp_Nov23::remember(int partition){
     int svd_dim = 2;
     fscanf(inFile,"%i", &svd_pt);
     fscanf(inFile,"%i", &svd_dim);
-    assert(SVD_DIM == svd_dim);
+   // assert(SVD_DIM == svd_dim);
     learned_dim = svd_pt+1;
     for(int i = 0; i < DATA_COUNT; i++){
         fscanf(inFile, "%lf", &rating);
-        if(rating < 1.0)
-            rating = 1.0;
-        else if(rating > 5.0)
-            rating = 5.0;
         gsl_matrix_set(ratings, i, 0, rating);
     }
     fclose(inFile);
@@ -484,16 +536,6 @@ void timeSVDpp_Nov23::remember(int partition){
     //Initializing baseline stuff
     userBias = gsl_matrix_calloc(USER_COUNT, 3 + NUM_USER_TIME_FACTORS * 2);
     movieBias = gsl_matrix_calloc(MOVIE_COUNT, 1 + NUM_MOVIE_BINS + FREQ_LOG_MAX);
-
-    freqNum = vector <vector <int> >(); //[user][freq]
-    freqDates = vector <vector <int> >(); //[user][date]
-    avgRatingDates = gsl_matrix_calloc(USER_COUNT, 1);
-    userFreqSpikes = gsl_matrix_calloc(USER_COUNT, NUM_USER_TIME_FACTORS);
-
-    printf("Initializing temporal dynamics...\n");
-    generate_frequency_table(partition);
-    generate_freq_spikes();
-    generate_avg_dates(partition);
 
     inFile = fopen(NOV23_BASELINE_FILE, "r");
     assert(inFile != NULL);
