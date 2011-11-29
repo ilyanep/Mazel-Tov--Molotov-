@@ -32,7 +32,7 @@ class SVDK_Nov17: public IPredictor{
         vector <double> rmseout;    
 
         double learn_point(int svd_pt, int user, int movie, double rating, int pt_num, bool refining);
-        double predict_point(int user, int movie, int date);
+        double predict_point(int user, int movie, int date, int index);
         double predict_train(int user, int movie, double bias, int svd_pt, double nSum);
         void load_data();
     public:
@@ -56,7 +56,7 @@ class SVDK_Nov17: public IPredictor{
         double rmse_probe();
         void learn(int partition, bool refine);
         virtual void learn(int partition);
-        virtual double predict(int user, int movie, int time);
+        virtual double predict(int user, int movie, int time, int index);
         virtual void remember(int partition);
         virtual void free_mem();
       
