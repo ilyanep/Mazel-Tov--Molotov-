@@ -1,4 +1,6 @@
 #include "blender.h"
+#include "../binary_files/binary_files.h"
+#include "../learning_method.h"
 #include <assert.h>
 #include <vector>
 #include <iostream>
@@ -8,8 +10,6 @@ using namespace std;
 #include "../SVDK_Nov21/svdk_nov21.h"
 #include "../Baseline_Nov19/baseline_nov19.h"
 #include "../all_3_predictor/all_3_predictor.h"
-#include "../binary_files/binary_files.h"
-#include "../learning_method.h"
 #include "../write_data/write_results.h"
 #include "../SVD_Oct18/svd_oct18.h"
 #include "../SVD_Oct25/svd_oct25.h"
@@ -19,6 +19,7 @@ using namespace std;
 #include "../Baseline_Oct25/baseline_oct25.h"
 #include "../Baseline_Nov12/baseline_nov12.h"
 #include "../movie_knn/movie_knn_pearson.h"
+#include "../FilePredictor/file_predictor.h"
 
 #define BLENDER_LEARNING_PARTITION 4
 #ifndef SUBMIT_NUM_POINTS
@@ -50,6 +51,7 @@ int main() {
     SVD_Nov2 svd_nov2;
     SVDK_Nov9 svdk_nov9;
     SVDK_Nov13 svdk_nov13;
+    FilePredictor rbm_file("../FilePredictor/predict_file_probe.dta", "../FilePredictor/predict_file_qual.dta");
     predictor_vector.push_back(&svdk_nov21);
     predictor_vector.push_back(&timesvdpp_nov23);
     predictor_vector.push_back(&baseline_nov19);
@@ -63,6 +65,7 @@ int main() {
     //predictor_vector.push_back(&mknn_pearson);
     predictor_vector.push_back(&svdk_nov9);
     predictor_vector.push_back(&svdk_nov13);
+    predictor_vector.push_back(&rbm_file);
 
     // Initialize your mom
     cout << "Loarning linear blender" << endl;
@@ -79,11 +82,13 @@ int main() {
     }
     for (int j = 0; j < linear_blend_predictor.predictors_.size(); j++) {
         printf("predictor number %i\n", j);
-        linear_blend_predictor.predictors_[j]->remember(3); 
+        linear_blend_predictor.predictors_[j]->remember(3);
+        int ptcount = 0;
         for(int i=0; i < SVDK_Nov13::DATA_COUNT; i++) {
             if(get_um_idx_ratingset(i) == 5){
-                res[i] += (gsl_vector_get(linear_blend_predictor.aggregator_weights_, j) * 
-                            linear_blend_predictor.predictors_[j]->predict( get_um_all_usernumber(i), get_um_all_movienumber(i), get_um_all_datenumber(i), i) ); 
+                res[ptcount] += (gsl_vector_get(linear_blend_predictor.aggregator_weights_, j) * 
+                            linear_blend_predictor.predictors_[j]->predict( get_um_all_usernumber(i), get_um_all_movienumber(i), get_um_all_datenumber(i), i) );
+                ptcount++;
             }
         }
         linear_blend_predictor.predictors_[j]->free_mem();
