@@ -23,7 +23,7 @@ class LinearBlender : public IPredictor {
         //learn(), remember(), and predict() are defined in learning_methods.h
         void learn(int partition);
         void remember(int partition);
-        double predict(int user, int movie, int date);
+        double predict(int user, int movie, int date, int index);
         void free_mem();
 };
 

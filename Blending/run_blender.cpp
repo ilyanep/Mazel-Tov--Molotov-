@@ -4,6 +4,9 @@
 #include <iostream>
 #include <string>
 using namespace std;
+#include "../timeSVDpp_Nov23/timesvdpp_nov23.h"
+#include "../SVDK_Nov21/svdk_nov21.h"
+#include "../Baseline_Nov19/baseline_nov19.h"
 #include "../all_3_predictor/all_3_predictor.h"
 #include "../binary_files/binary_files.h"
 #include "../learning_method.h"
@@ -25,9 +28,10 @@ using namespace std;
 int main() {
     // Pull in the datapoints on which we want predictions
     cout << "Loading and/or checking loaded data" << endl;
-    assert(load_mu_qual_usernumber() == 0);
-    assert(load_mu_qual_movienumber() == 0);
-    assert(load_mu_qual_datenumber() == 0);
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_datenumber() == 0);
+    assert(load_um_idx_ratingset() == 0);
 
     // Initialize all the predictors
     cout << "Initializing predictor vector" << endl;
@@ -35,6 +39,9 @@ int main() {
     
     //Movie_Knn mknn;
     //Movie_Knn_Pearson mknn_pearson;
+    SVDK_Nov21 svdk_nov21;
+    timeSVDpp_Nov23 timesvdpp_nov23;
+    Baseline_Nov19 baseline_nov19;
     All3Predictor all_3s; 
     SVD_Oct18 svd_oct18;
     SVD_Oct25 svd_oct25;
@@ -43,6 +50,9 @@ int main() {
     SVD_Nov2 svd_nov2;
     SVDK_Nov9 svdk_nov9;
     SVDK_Nov13 svdk_nov13;
+    predictor_vector.push_back(&svdk_nov21);
+    predictor_vector.push_back(&timesvdpp_nov23);
+    predictor_vector.push_back(&baseline_nov19);
     predictor_vector.push_back(&all_3s);
     predictor_vector.push_back(&svd_oct18);
     predictor_vector.push_back(&svd_oct25);
@@ -62,16 +72,19 @@ int main() {
     // Get predictions
     cout << "Obtaining predictions" << endl;
     vector<double> res;
-    for(int i=0; i < SUBMIT_NUM_POINTS; ++i) {
-        res.push_back(0);
+    for(int i=0; i < SVDK_Nov13::DATA_COUNT; i++) {
+        if(get_um_idx_ratingset(i) == 5){
+            res.push_back(0);
+        }
     }
-    for (int j = 0; j < linear_blend_predictor.predictors_.size(); ++j) {
+    for (int j = 0; j < linear_blend_predictor.predictors_.size(); j++) {
         printf("predictor number %i\n", j);
         linear_blend_predictor.predictors_[j]->remember(3); 
-        for(int i=0; i < SUBMIT_NUM_POINTS; ++i) {
-            res[i] += (gsl_vector_get(linear_blend_predictor.aggregator_weights_, j) * linear_blend_predictor.predictors_[j]->predict( get_mu_qual_usernumber(i),
-                                                                                                                          get_mu_qual_movienumber(i),
-                                                                                                                          get_mu_qual_datenumber(i) ) );; 
+        for(int i=0; i < SVDK_Nov13::DATA_COUNT; i++) {
+            if(get_um_idx_ratingset(i) == 5){
+                res[i] += (gsl_vector_get(linear_blend_predictor.aggregator_weights_, j) * 
+                            linear_blend_predictor.predictors_[j]->predict( get_um_all_usernumber(i), get_um_all_movienumber(i), get_um_all_datenumber(i), i) ); 
+            }
         }
         linear_blend_predictor.predictors_[j]->free_mem();
     }
