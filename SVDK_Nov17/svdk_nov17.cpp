@@ -94,7 +94,7 @@ void SVDK_Nov17::learn(int partition, bool refining){
                     
             double rating = base_predict.predict((int)get_um_all_usernumber(point),
                                                  (int)get_um_all_movienumber(point),
-                                                 (int)get_um_all_datenumber(point));
+                                                 (int)get_um_all_datenumber(point), point);
 
             //double rating = AVG_RATING;
             gsl_matrix_set(ratings, point, 0, rating);
@@ -405,7 +405,7 @@ double SVDK_Nov17::rmse_probe(){
         if(get_um_idx_ratingset(i) == 4 && count < 10000){
             double prediction = predict((int)get_um_all_usernumber(i),
                                         (int)get_um_all_movienumber(i),
-                                        (int)get_um_all_datenumber(i));
+                                        (int)get_um_all_datenumber(i), i);
             double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
@@ -415,24 +415,16 @@ double SVDK_Nov17::rmse_probe(){
     return RMSE;
 }   
 
-double SVDK_Nov17::predict(int user, int movie, int time){
-    double rating = predict_point(user-1, movie-1, time);
+double SVDK_Nov17::predict(int user, int movie, int time, int index){
+    double rating = predict_point(user-1, movie-1, time, index);
     return rating;
 }
 
-double SVDK_Nov17::predict_point(int user, int movie, int date){
-    double rating = base_predict.predict(user+1, movie+1, date) +
+double SVDK_Nov17::predict_point(int user, int movie, int date, int index){
+    double rating = gsl_matrix_get(ratings, index, 0) +
                     gsl_matrix_get(userSVD, user, 0) +
                     gsl_matrix_get(movieSVD, movie, 0);
-    double norm = sqrt((double)userMovies[user].size());
-    for (int i = 1; i < SVD_DIM+1; i++){
-        double nSum = 0.0;
-        for(int y = 0; y < userMovies[user].size(); y++){
-            nSum = nSum + gsl_matrix_get(movieSVD, userMovies[user][y], SVD_DIM+i);
-        }
-        rating = rating + ( gsl_matrix_get(userSVD, user, i) + (nSum / norm) ) *
-                          ( gsl_matrix_get(movieSVD, movie, i) );
-    }
+    rating += INIT_SVD_VAL * INIT_SVD_VAL * 5.0; //QUICKFIX FOR NOW, SHOULD ACTUALLY CALCULATE THIS NUMBER
     if(rating < 1.0)
         return 1.0;
     else if(rating > 5.0)

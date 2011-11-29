@@ -29,7 +29,7 @@ protected:
      * Initiate an instance of this class. 
      * Sets the learned_partition to default (1)
      */
-    void initiate();
+    virtual void initiate();
     
     /*
      * This will set the movie_start_indexes to be an array of the form:
@@ -41,7 +41,7 @@ protected:
      * note also that in order to make edge cases easier, 
      *     movie_start_indexes[1771]=num_ratings
      */
-    void initialize_movie_start_indexes();
+    virtual void initialize_movie_start_indexes();
     
     /*
      * This will set the user_start_indexes to be an array of the form:
@@ -53,7 +53,7 @@ protected:
      * note also that in order to make edge cases easier, 
      *     user_start_indexes[458294]=num_ratings
      */
-    void initialize_user_start_indexes();
+    virtual void initialize_user_start_indexes();
     
     /*
      * Determines the number of users in this partition or less that have rated this movie
@@ -63,7 +63,7 @@ protected:
      *
      * return:      The number of users that have rated this movie in this partition or less
      */
-    int number_users_rated(int movie, int partition);
+    virtual int number_users_rated(int movie, int partition);
     
     /*
      * Determines the number of users in this partition or less that have rated both of these movies
@@ -74,7 +74,7 @@ protected:
      *
      * return:      The number of users that have rated both movie_i and movie_j in this partition or less
      */
-    int number_users_rated(int movie_i, int movie_j, int partition);
+    virtual int number_users_rated(int movie_i, int movie_j, int partition);
     
     /*
      * Determines the number of users in this partition or less that have rated both of these movies,
@@ -83,14 +83,14 @@ protected:
      *    pairs[2*l]   = a rating of movie_i
      *    pairs[2*l+1] = a rating of movie_j by the same user
      * 
-     * pairs:       the char[] to which to write the ratings of these movies
+     * pairs:       the double[] to which to write the ratings of these movies
      * movie_i:     one movie involved
      * movie_j:     the other movie involved
      * partition:   an integer 1-5, we're only talking this partition or less
      *
      * return:      The number of users that have rated both movie_i and movie_j in this partition or less
      */
-    int rating_pairs(char *pairs, int movie_i, int movie_j, int partition);
+    virtual int rating_pairs(double *pairs, int movie_i, int movie_j, int partition);
     
     /*
      * all inheritors of Movie_Knn must define a movie-movie correlation function, rho,
@@ -167,7 +167,7 @@ public:
      * Note that for negative correlaitons, we reverse the rating (6-rating) when taking this
      * average, so that we can calculate with all positive weights. 
      */
-    virtual double predict(int user, int movie, int time);
+    virtual double predict(int user, int movie, int time, int placeholder);
 
     virtual void free_mem();
 };

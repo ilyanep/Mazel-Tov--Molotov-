@@ -19,7 +19,7 @@ int main (int argc, char **argv)
     {
         if (get_mu_idx_ratingset(i) == char( 3))
         {
-            error = m.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i))-float(get_mu_all_rating(i));
+            error = m.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i),0)-float(get_mu_all_rating(i));
             if (error < 0.0)
             {
                 error = -error;

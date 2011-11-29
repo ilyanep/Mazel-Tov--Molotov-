@@ -27,10 +27,7 @@ SVDK_Nov21::SVDK_Nov21(){
 }
 
 void SVDK_Nov21::free_mem(){
-    gsl_matrix_free(userSVD);
-    gsl_matrix_free(movieSVD);
     gsl_matrix_free(ratings);
-    userMovies.clear();
 }
 
 void SVDK_Nov21::learn(int partition){
@@ -302,6 +299,7 @@ void SVDK_Nov21::remember(int partition){
     printf("Loading ratings list...\n");
     double rating = 0.0;
     inFile = fopen(NOV21_RATINGS_FILE, "r");
+    assert(inFile != NULL);
     int svd_pt = 1;
     int svd_dim = 2;
     fscanf(inFile,"%i", &svd_pt);
@@ -345,10 +343,8 @@ double SVDK_Nov21::rmse_probe(){
     return RMSE;
 }   
 
-double SVDK_Nov21::predict(int user, int movie, int time){
-    double rating = predict_point(user-1, movie-1, time);
-    assert(false); //should not be called
-    return rating;
+double SVDK_Nov21::predict(int user, int movie, int time, int index){
+    return gsl_matrix_get(ratings, index, 0);
 }
 
 double SVDK_Nov21::predict_point(int user, int movie, int date){

@@ -54,7 +54,8 @@ void LinearBlender::learn(int partition) {
             gsl_matrix_set(predictions_matrix, i, j, 
                            predictors_[j]->predict(get_mu_all_usernumber(relevant_points_list[i]),
                                                   get_mu_all_movienumber(relevant_points_list[i]),
-                                                  get_mu_all_datenumber(relevant_points_list[i])));
+                                                  get_mu_all_datenumber(relevant_points_list[i]),
+                                                  relevant_points_list[i]));
         }
         predictors_[j]->free_mem(); 
     }
@@ -142,12 +143,12 @@ gsl_vector * LinearBlender::aggregator_solution(gsl_matrix* predictions_matrix, 
 // other predictors not having changed).
 void LinearBlender::remember(int partition) {}
 
-double LinearBlender::predict(int user, int movie, int date) {
+double LinearBlender::predict(int user, int movie, int date, int index) {
     assert(initialized_ == true);
     // Use solved aggregator matrix to predict
     double current_prediction = 0.0;
     for (int i = 0; i < predictors_.size(); ++i) {
-        current_prediction += (gsl_vector_get(aggregator_weights_, i) * predictors_[i]->predict(user, movie, date));    
+        current_prediction += (gsl_vector_get(aggregator_weights_, i) * predictors_[i]->predict(user, movie, date, index));    
     }
 
     return current_prediction;

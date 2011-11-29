@@ -60,11 +60,11 @@ void SVDK_Nov13::learn(int partition, bool refining){
     printf("Generating data set biases...\n");
     data_bias = new double[DATA_COUNT];
     for(int point = 0; point < DATA_COUNT; point++){
-        data_bias[point] = base_predict.predict((int)get_mu_all_usernumber(point),
-                                                (int)get_mu_all_movienumber(point),
-                                                (int)get_mu_all_datenumber(point));
+        data_bias[point] = base_predict.predict((int)get_um_all_usernumber(point),
+                                                (int)get_um_all_movienumber(point),
+                                                (int)get_um_all_datenumber(point),0);
         //if(point % 1000000 == 0)
-        //    printf("Original rating: %lf, unbiased rating: %lf \n", (double)get_mu_all_rating(point), unbiased_ratings[point]);
+        //    printf("Original rating: %lf, unbiased rating: %lf \n", (double)get_um_all_rating(point), unbiased_ratings[point]);
     }
 
     /* Choose points randomly */
@@ -105,10 +105,10 @@ void SVDK_Nov13::learn(int partition, bool refining){
             errsq = 0.0;
             point_count = 0;
             for(int i = 0; i < DATA_COUNT; i++){
-                if(get_mu_idx_ratingset(i) <= partition){
-                    err = learn_point(p, get_mu_all_usernumber(i)-1,
-                                         (int)get_mu_all_movienumber(i)-1,
-                                         (double)get_mu_all_rating(i), data_bias[i], refining);
+                if(get_um_idx_ratingset(i) <= partition){
+                    err = learn_point(p, get_um_all_usernumber(i)-1,
+                                         (int)get_um_all_movienumber(i)-1,
+                                         (double)get_um_all_rating(i), data_bias[i], refining);
                     //if(err != -999){
                         errsq = errsq + err * err;
                         point_count++;
@@ -202,16 +202,16 @@ void SVDK_Nov13::remember(int partition){
 }
 
 void SVDK_Nov13::load_data(){
-    assert(load_mu_all_usernumber() == 0);
-    assert(load_mu_all_movienumber() == 0);
-    assert(load_mu_all_datenumber() == 0);
-    assert(load_mu_all_rating() == 0);
-    assert(load_mu_idx_ratingset() == 0);
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_datenumber() == 0);
+    assert(load_um_all_rating() == 0);
+    assert(load_um_idx_ratingset() == 0);
 
     data_loaded = true;
 }
 
-double SVDK_Nov13::predict(int user, int movie, int time){
+double SVDK_Nov13::predict(int user, int movie, int time, int index){
     double rating = predict_point(user-1, movie-1, time);
     return rating;
 }
@@ -220,11 +220,11 @@ double SVDK_Nov13::rmse_probe(){
     double RMSE = 0.0;
     int count = 0;
     for(int i = 0; i < DATA_COUNT; i++) {
-        if(get_mu_idx_ratingset(i) == 4){
-            double prediction = predict(get_mu_all_usernumber(i),
-                                        (int)get_mu_all_movienumber(i),
-                                        (int)get_mu_all_datenumber(i));
-            double error = (prediction - (double)get_mu_all_rating(i));
+        if(get_um_idx_ratingset(i) == 4){
+            double prediction = predict(get_um_all_usernumber(i),
+                                        (int)get_um_all_movienumber(i),
+                                        (int)get_um_all_datenumber(i),0);
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }
@@ -234,7 +234,7 @@ double SVDK_Nov13::rmse_probe(){
 }   
 
 double SVDK_Nov13::predict_point(int user, int movie, int date){
-    double rating = base_predict.predict(user+1, movie+1, date) +
+    double rating = base_predict.predict(user+1, movie+1, date,0) +
                     gsl_matrix_get(userSVD, user, SVD_DIM) +
                     gsl_matrix_get(movieSVD, SVD_DIM, movie);
     for (int i = 0; i < SVD_DIM; i++){

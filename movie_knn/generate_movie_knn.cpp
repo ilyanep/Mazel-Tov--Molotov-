@@ -16,7 +16,7 @@ int main (int argc, char **argv)
     double error;
     int size_of_partition_two = 0;
     int i=1;
-    printf("m: %f, n: %f, rating = %d\n", m.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i)), n.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i)),get_mu_all_rating(i));
+    printf("m: %f, n: %f, rating = %d\n", m.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i),0), n.predict(get_mu_all_usernumber(i),get_mu_all_movienumber(i),get_mu_all_datenumber(i),0),get_mu_all_rating(i));
     
     // This is just the code to calculate the RMSE on partition 2. 
     /*for (int i=0; i < 102416306; i++)

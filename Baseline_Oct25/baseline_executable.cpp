@@ -1,3 +1,15 @@
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <math.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string>
+#include <assert.h>
+#include <cstdlib>
+#include <unistd.h>
+#include <sstream>
 #include <string.h>
 #include "baseline_oct25.h"
 #include <math.h>
@@ -28,9 +40,9 @@ int main(int argc, char* argv[]) {
         //load qual data files (user,movie numbers) in mu order
         assert(load_mu_qual_usernumber() == 0);
         assert(load_mu_qual_movienumber() == 0);
-        for(int i=0; i < Baseline_Oct25::SUBMIT_NUM_POINTS; i++) {
+        for(int i=0; i <  OCT25_SUBMIT_NUM_POINTS; i++) {
             results.push_back(predictor.predict(get_mu_qual_usernumber(i),
-                                           (int)get_mu_qual_movienumber(i),0));
+                                           (int)get_mu_qual_movienumber(i),0,0));
         }
         output_results(results);
     }      

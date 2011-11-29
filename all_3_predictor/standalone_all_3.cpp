@@ -6,7 +6,7 @@ int main() {
     predictor.learn(5);
     vector<double> res;
     for(int i=0; i < 2749898; ++i) {
-        res.push_back(predictor.predict(i,i,i));
+        res.push_back(predictor.predict(i,i,i,0));
     }
     output_results(res);
 }

@@ -71,9 +71,9 @@ void Baseline_Oct25::calculate_user_time_spikes(int partition){
     for(int point = 0; point < DATA_COUNT; point++){
         //if(point % 10000000 == 0)
         //    printf("\t\t\t%i percent\n", (int)((double)point*100.0/(double)DATA_COUNT));
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            date = get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            date = get_um_all_datenumber(point);
             
             //Check if this is one of the users frequent dates
             bool foundDate = false;
@@ -87,9 +87,9 @@ void Baseline_Oct25::calculate_user_time_spikes(int partition){
             }
             //If date is found, modify appropriate counters
             if(foundDate){
-                movie = get_mu_all_movienumber(point);
-                ratingErr = (double)get_mu_all_rating(point) - 
-                            predict(user, movie, date);
+                movie = get_um_all_movienumber(point);
+                ratingErr = (double)get_um_all_rating(point) - 
+                            predict(user, movie, date,0);
                 gsl_matrix_set(user_days, user-1, datePoint,
                     gsl_matrix_get(user_days, user-1, datePoint)+
                     ratingErr);
@@ -135,9 +135,9 @@ void Baseline_Oct25::find_user_rating_days(int partition){
     for(int point = 0; point < DATA_COUNT; point++){
         //if(point % 10000000 == 0)
         //    printf("\t\t\t%i percent\n", (int)((double)point*100.0/(double)DATA_COUNT));
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            date = get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            date = get_um_all_datenumber(point);
             int dateIndex = find_element_vect(freqDates[user-1], date);
             if(dateIndex == -1){
                 freqDates[user-1].push_back(date);
@@ -236,11 +236,11 @@ void Baseline_Oct25::refine_by_gradient_descent(int partition){
         int endIndex = 0;
         bool found = false;
         for(int point = 0; point < DATA_COUNT; point++){
-            if(get_mu_all_usernumber(point) - 1 == user && !found){
+            if(get_um_all_usernumber(point) - 1 == user && !found){
                 startIndex = point;
                 found = true;
             }
-            if(get_mu_all_usernumber(point) - 1 != user && found){
+            if(get_um_all_usernumber(point) - 1 != user && found){
                 endIndex = point;
                 found = false;
                 break;
@@ -290,11 +290,11 @@ double Baseline_Oct25::rmse_probe_part(int partition){
     double RMSE = 0.0;
     int count = 0;
     for(int i = 0; i < DATA_COUNT; i++) {
-        if(get_mu_idx_ratingset(i) == partition){
-            double prediction = predict(get_mu_all_usernumber(i),
-                                    (int)get_mu_all_movienumber(i),
-                                    (int)get_mu_all_datenumber(i));
-            double error = (prediction - (double)get_mu_all_rating(i));
+        if(get_um_idx_ratingset(i) == partition){
+            double prediction = predict(get_um_all_usernumber(i),
+                                    (int)get_um_all_movienumber(i),
+                                    (int)get_um_all_datenumber(i));
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }
@@ -309,12 +309,12 @@ double Baseline_Oct25::rmse_probe_user(int partition, int user, int startIndex, 
     int count = 0;
     int ptUser;
     for(int i = startIndex; i <= endIndex; i++) {
-        ptUser = (int)get_mu_all_usernumber(i);
-        if(get_mu_idx_ratingset(i) == partition && ptUser == user){
+        ptUser = (int)get_um_all_usernumber(i);
+        if(get_um_idx_ratingset(i) == partition && ptUser == user){
             double prediction = predict(ptUser,
-                                        get_mu_all_movienumber(i),
-                                        (int)get_mu_all_datenumber(i));
-            double error = (prediction - (double)get_mu_all_rating(i));
+                                        get_um_all_movienumber(i),
+                                        (int)get_um_all_datenumber(i));
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }
@@ -329,12 +329,12 @@ double Baseline_Oct25::rmse_probe_movie(int partition, int movie){
     int count = 0;
     int ptMovie;
     for(int i = 0; i < DATA_COUNT; i++) {
-        ptMovie = (int)get_mu_all_movienumber(i);
-        if(get_mu_idx_ratingset(i) == partition && ptMovie == movie){
-            double prediction = predict(get_mu_all_usernumber(i),
+        ptMovie = (int)get_um_all_movienumber(i);
+        if(get_um_idx_ratingset(i) == partition && ptMovie == movie){
+            double prediction = predict(get_um_all_usernumber(i),
                                                   ptMovie,
-                                                  (int)get_mu_all_datenumber(i));
-            double error = (prediction - (double)get_mu_all_rating(i));
+                                                  (int)get_um_all_datenumber(i));
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }
@@ -352,12 +352,12 @@ void Baseline_Oct25::calculate_average_biases(int partition){
     gsl_matrix *userBias_t = gsl_matrix_calloc(USER_COUNT, 2);
     gsl_matrix *movieBias_t = gsl_matrix_calloc(MOVIE_COUNT, 2);
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            movie = get_mu_all_movienumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            movie = get_um_all_movienumber(point);
 
             gsl_matrix_set(movieBias_t, movie-1, 0,
                 gsl_matrix_get(movieBias_t, movie-1, 0) +
-                get_mu_all_rating(point) - (double)AVG_RATING);
+                get_um_all_rating(point) - (double)AVG_RATING);
 
             gsl_matrix_set(movieBias_t, movie-1, 1,
                 gsl_matrix_get(movieBias_t, movie-1, 1) + 1);
@@ -373,13 +373,13 @@ void Baseline_Oct25::calculate_average_biases(int partition){
     }
     printf("\tCalculating user biases...\n");
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            movie = get_mu_all_movienumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            movie = get_um_all_movienumber(point);
 
             gsl_matrix_set(userBias_t, user-1, 0,
                 gsl_matrix_get(userBias_t, user-1, 0) +
-                get_mu_all_rating(point) - (double)AVG_RATING -
+                get_um_all_rating(point) - (double)AVG_RATING -
                 gsl_matrix_get(movieBias, movie-1, 0));
 
             gsl_matrix_set(userBias_t, user-1, 1,
@@ -405,14 +405,14 @@ void Baseline_Oct25::calculate_movie_time_effects(int partition){
     gsl_matrix *movieBias_t = gsl_matrix_calloc(MOVIE_COUNT, NUM_MOVIE_BINS * 2);
     printf("\tCalculating movie bins...\n");
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            movie = get_mu_all_movienumber(point);
-            date = get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            movie = get_um_all_movienumber(point);
+            date = get_um_all_datenumber(point);
             binNumber = (date - 1) / MOVIE_BIN_SIZE;
 
             gsl_matrix_set(movieBias_t, movie-1, binNumber,
                 gsl_matrix_get(movieBias_t, movie-1, binNumber) +
-                get_mu_all_rating(point) - (double)AVG_RATING -
+                get_um_all_rating(point) - (double)AVG_RATING -
                 gsl_matrix_get(movieBias, movie-1, binNumber));
 
             gsl_matrix_set(movieBias_t, movie-1, NUM_MOVIE_BINS+binNumber,
@@ -458,10 +458,10 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
     //Find average rating date and error
     //userBias_t: [user][date_sum, rating_count, 0, 0]
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            movie = get_mu_all_movienumber(point);
-            date = (double)get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            movie = get_um_all_movienumber(point);
+            date = (double)get_um_all_datenumber(point);
 
             gsl_matrix_set(userBias_t, user-1, 0,
                 gsl_matrix_get(userBias_t, user-1, 0) +
@@ -469,7 +469,7 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
             
             /*gsl_matrix_set(userBias_t, user-1, 1,
                 gsl_matrix_get(userBias_t, user-1, 1) +
-                (double)get_mu_all_rating(point) - predict(user, movie, date));
+                (double)get_um_all_rating(point) - predict(user, movie, date));
             */
             gsl_matrix_set(userBias_t, user-1, 1,
                 gsl_matrix_get(userBias_t, user-1, 1) + 1);
@@ -492,10 +492,10 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
     //Find average date with transformation
     //userBias_t: [user][avgdate, rating_count, sum_transformed_date, 0]
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            movie = get_mu_all_movienumber(point);
-            date = (double)get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            movie = get_um_all_movienumber(point);
+            date = (double)get_um_all_datenumber(point);
             avgdate = gsl_matrix_get(userBias_t, user-1, 0);
 
             if((double)date >= avgdate)
@@ -525,10 +525,10 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
     double covxy;
     double varx;
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < partition){
-            user = get_mu_all_usernumber(point);
-            movie = get_mu_all_movienumber(point);
-            date = (double)get_mu_all_datenumber(point);
+        if(get_um_idx_ratingset(point) < partition){
+            user = get_um_all_usernumber(point);
+            movie = get_um_all_movienumber(point);
+            date = (double)get_um_all_datenumber(point);
             avgdate = gsl_matrix_get(userBias_t, user-1, 0);
             //avgerr = gsl_matrix_get(userBias_t, user-1, 1);
             avgerr = 0.0;
@@ -540,7 +540,7 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
                 dateFactor = -1.0*pow(avgdate - (double)date, USER_DATE_EXP);
 
             covxy = gsl_matrix_get(userBias_t, user-1, 2) +
-                (((double)get_mu_all_rating(point) - predict(user, movie, date) - avgerr) *
+                (((double)get_um_all_rating(point) - predict(user, movie, date,0) - avgerr) *
                 (dateFactor - avgtransdate));
             
 
@@ -583,7 +583,7 @@ void Baseline_Oct25::calculate_user_time_gradient(int partition){
     gsl_matrix_free(userBias_t);
 }
 
-double Baseline_Oct25::predict(int user, int movie, int date){
+double Baseline_Oct25::predict(int user, int movie, int date, int index){
     //Calculate movie factor from bin
     int movieBin = (date - 1) / MOVIE_BIN_SIZE;
     double movieFactor = gsl_matrix_get(movieBias, movie-1, movieBin);
@@ -701,11 +701,11 @@ double Baseline_Oct25::rmse_probe(){
     double RMSE = 0.0;
     int count = 0;
     for(int i = 0; i < DATA_COUNT; i++) {
-        if(get_mu_idx_ratingset(i) == 4){
-            double prediction = predict(get_mu_all_usernumber(i),
-                                                  (int)get_mu_all_movienumber(i),
-                                                  (int)get_mu_all_datenumber(i));
-            double error = (prediction - (double)get_mu_all_rating(i));
+        if(get_um_idx_ratingset(i) == 4){
+            double prediction = predict(get_um_all_usernumber(i),
+                                                  (int)get_um_all_movienumber(i),
+                                                  (int)get_um_all_datenumber(i),0);
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }
@@ -715,22 +715,22 @@ double Baseline_Oct25::rmse_probe(){
 }    
 
 void Baseline_Oct25::load_data(){
-    assert(load_mu_all_usernumber() == 0);
-    assert(load_mu_all_movienumber() == 0);
-    assert(load_mu_all_rating() == 0);
-    assert(load_mu_idx_ratingset() == 0);
-    assert(load_mu_all_datenumber() == 0);
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_rating() == 0);
+    assert(load_um_idx_ratingset() == 0);
+    assert(load_um_all_datenumber() == 0);
     data_loaded = true;
 }
 
 /*
 int main(int argc, char* argv[]) {
     printf("Loading data...\n");
-    assert(load_mu_all_usernumber() == 0);
-    assert(load_mu_all_movienumber() == 0);
-    assert(load_mu_all_datenumber() == 0);
-    assert(load_mu_all_rating() == 0);
-    assert(load_mu_idx_ratingset() == 0);
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_datenumber() == 0);
+    assert(load_um_all_rating() == 0);
+    assert(load_um_idx_ratingset() == 0);
     
     printf("Calculating user/movie biases...\n");
     gsl_matrix *userBias = gsl_matrix_calloc(USER_COUNT, 2);
@@ -738,12 +738,12 @@ int main(int argc, char* argv[]) {
     int user;
     int movie;
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < 5){
-            movie = get_mu_all_movienumber(point);
+        if(get_um_idx_ratingset(point) < 5){
+            movie = get_um_all_movienumber(point);
 
             gsl_matrix_set(movieBias, movie-1, 0,
                 gsl_matrix_get(movieBias, movie-1, 0) +
-                get_mu_all_rating(point) - AVG_RATING);
+                get_um_all_rating(point) - AVG_RATING);
 
             gsl_matrix_set(movieBias, movie-1, 1,
                 gsl_matrix_get(movieBias, movie-1, 1) + 1);
@@ -757,12 +757,12 @@ int main(int argc, char* argv[]) {
     }
 
     for(int point = 0; point < DATA_COUNT; point++){
-        if(get_mu_idx_ratingset(point) < 5){
-            user = get_mu_all_usernumber(point);
-            movie = get_mu_all_movienumber(point);
+        if(get_um_idx_ratingset(point) < 5){
+            user = get_um_all_usernumber(point);
+            movie = get_um_all_movienumber(point);
             gsl_matrix_set(userBias, user-1, 0,
                 gsl_matrix_get(userBias, user-1, 0) +
-                get_mu_all_rating(point) - AVG_RATING -
+                get_um_all_rating(point) - AVG_RATING -
                 gsl_matrix_get(movieBias, movie-1, 0));
 
             gsl_matrix_set(userBias, user-1, 1,

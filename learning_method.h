@@ -35,7 +35,7 @@ class IPredictor {
     // This method should return a predicted rating based on existing
     // residuals. If the internal state indicates that the learning has not
     // occurred yet, Remember() should be called.
-    virtual double predict(int user, int movie, int time) = 0;
+    virtual double predict(int user, int movie, int time, int index) = 0;
 
     //This method should free up whatever memory the predictor is using
     //internally so that the blender doesn't use up infinite memory when loading

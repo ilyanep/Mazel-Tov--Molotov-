@@ -6,5 +6,5 @@
     void All3Predictor::learn(int partition) { }
     void All3Predictor::remember(int partition) { }
 
-    double All3Predictor::predict(int user, int movie, int time) { return 3.0; }
+    double All3Predictor::predict(int user, int movie, int time, int index) { return 3.0; }
     void All3Predictor::free_mem() { }

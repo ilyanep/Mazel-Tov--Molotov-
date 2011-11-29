@@ -50,7 +50,7 @@ class SVDK_Nov21: public IPredictor{
         void save(int svd_pt);
         double rmse_probe();
         virtual void learn(int partition);
-        virtual double predict(int user, int movie, int time);
+        virtual double predict(int user, int movie, int time, int index);
         virtual void remember(int partition);
         virtual void free_mem();
       

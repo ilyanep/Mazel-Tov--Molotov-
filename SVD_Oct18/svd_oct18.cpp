@@ -95,10 +95,10 @@ void SVD_Oct18::learn(int partition, bool refining){
             errsq = 0.0;
             point_count = 0;
             for(int i = 0; i < DATA_COUNT; i++){
-                if(get_mu_idx_ratingset(i) <= partition){
-                    err = learn_point(p, get_mu_all_usernumber(i)-1,
-                                         get_mu_all_movienumber(i)-1,
-                                         get_mu_all_rating(i)-AVG_RATING, refining);
+                if(get_um_idx_ratingset(i) <= partition){
+                    err = learn_point(p, get_um_all_usernumber(i)-1,
+                                         get_um_all_movienumber(i)-1,
+                                         get_um_all_rating(i)-AVG_RATING, refining);
                     if(err != -999){
                         errsq = errsq + err * err;
                         point_count++;
@@ -180,15 +180,15 @@ void SVD_Oct18::remember(int partition){
 }
 
 void SVD_Oct18::load_data(){
-    assert(load_mu_all_usernumber() == 0);
-    assert(load_mu_all_movienumber() == 0);
-    assert(load_mu_all_rating() == 0);
-    assert(load_mu_idx_ratingset() == 0);
+    assert(load_um_all_usernumber() == 0);
+    assert(load_um_all_movienumber() == 0);
+    assert(load_um_all_rating() == 0);
+    assert(load_um_idx_ratingset() == 0);
 
     data_loaded = true;
 }
 
-double SVD_Oct18::predict(int user, int movie, int time){
+double SVD_Oct18::predict(int user, int movie, int time, int index){
     double rating = AVG_RATING + (double)predict_point(user-1, movie-1);
     return rating;
 }
@@ -197,10 +197,10 @@ float SVD_Oct18::rmse_probe(){
     double RMSE = 0.0;
     int count = 0;
     for(int i = 0; i < DATA_COUNT; i++) {
-        if(get_mu_idx_ratingset(i) == 4){
-            double prediction = predict(get_mu_all_usernumber(i),
-                                                  (int)get_mu_all_movienumber(i),0);
-            double error = (prediction - (double)get_mu_all_rating(i));
+        if(get_um_idx_ratingset(i) == 4){
+            double prediction = predict(get_um_all_usernumber(i),
+                                                  (int)get_um_all_movienumber(i),0,0);
+            double error = (prediction - (double)get_um_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;
         }

@@ -40,7 +40,7 @@ class SVD_Oct18: public IPredictor{
         float rmse_probe();
         void learn(int partition, bool refine);
         virtual void learn(int partition);
-        virtual double predict(int user, int movie, int time);
+        virtual double predict(int user, int movie, int time, int index);
         virtual void remember(int partition);
         virtual void free_mem();
       
