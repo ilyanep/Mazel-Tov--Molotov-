@@ -109,7 +109,7 @@ class timeSVDpp_Nov26: public IPredictor{
         void save(int svd_pt);
         double rmse_probe();
         virtual void learn(int partition);
-        virtual double predict(int user, int movie, int time);
+        virtual double predict(int user, int movie, int time, int index);
         double predict_point(int user, int movie, int date, int allIndex);
         virtual void remember(int partition);
         virtual void free_mem();

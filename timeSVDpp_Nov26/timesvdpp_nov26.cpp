@@ -605,9 +605,8 @@ double timeSVDpp_Nov26::rmse_probe(){
     return RMSE;
 }   
 
-double timeSVDpp_Nov26::predict(int user, int movie, int time){
-    assert(false); //should not be called
-    double rating = predict_point(user-1, movie-1, time, 0);
+double timeSVDpp_Nov26::predict(int user, int movie, int time, int index){
+    double rating = predict_point(user-1, movie-1, time, index);
     return rating;
 }
 
