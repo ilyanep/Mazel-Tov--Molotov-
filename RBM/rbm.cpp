@@ -413,10 +413,14 @@ double RestrictedBoltzmannMachine::rmse_probe() {
 }
 
 void RestrictedBoltzmannMachine::write_predictions_to_file() {
+    free_um_all_usernumber(); free_um_all_movienumber(); free_um_all_rating(); free_um_idx_ratingset();
     assert(load_mu_all_usernumber() == 0);
     assert(load_mu_all_movienumber() == 0);
     assert(load_mu_all_rating() == 0);
     assert(load_mu_idx_ratingset() == 0);
+    assert(load_mu_qual_usernumber() == 0);
+    assert(load_mu_qual_movienumber() == 0);
+    assert(load_mu_qual_datenumber() == 0);
     // Save weights to a file
     ofstream outfile_probe;
     ofstream outfile_qual;
@@ -424,7 +428,7 @@ void RestrictedBoltzmannMachine::write_predictions_to_file() {
     outfile_qual.open(RBM_PREDICTIONS_FILE2.c_str()); // Defined in the header file
     double prediction = 0;
     for(int i=0; i < RBM_TOTAL_NUM_POINTS; ++i) {
-        if(i % 1000 == 0) { cout << "Predicting on all point #" << i << endl; }
+        if(i % 1000000 == 0) { cout << "Predicting on all point #" << i << endl; }
         if(get_mu_idx_ratingset(i) == 4) {
             prediction = predict(get_mu_all_usernumber(i), get_mu_all_movienumber(i), get_mu_all_datenumber(i));
             if(isnan(prediction)) { prediction = 3; cout << "NaN prediction found" << endl; } 
@@ -432,7 +436,7 @@ void RestrictedBoltzmannMachine::write_predictions_to_file() {
         }
     }
     for(int i =0; i < RBM_QUAL_POINTS; ++i) {
-        if(i % 1000 == 0) { cout << "Predicting on qual point #" << i << endl; }
+        if(i % 1000000 == 0) { cout << "Predicting on qual point #" << i << endl; }
         prediction = predict(get_mu_qual_usernumber(i), get_mu_qual_movienumber(i), get_mu_qual_movienumber(i));
         if(isnan(prediction)) { prediction = 3; cout << "NaN prediction found" << endl; }
         outfile_qual << prediction << endl;
