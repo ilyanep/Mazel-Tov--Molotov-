@@ -186,7 +186,7 @@ void SVD_Nov2::load_data(){
     data_loaded = true;
 }
 
-double SVD_Nov2::predict(int user, int movie, int time){
+double SVD_Nov2::predict(int user, int movie, int time, int index){
     double rating = AVG_RATING + (double)predict_point(user-1, movie-1);
     return rating;
 }
@@ -197,7 +197,7 @@ float SVD_Nov2::rmse_probe(){
     for(int i = 0; i < DATA_COUNT; i++) {
         if(get_mu_idx_ratingset(i) == 4){
             double prediction = predict(get_mu_all_usernumber(i),
-                                                  (int)get_mu_all_movienumber(i),0);
+                                                  (int)get_mu_all_movienumber(i),0,0);
             double error = (prediction - (double)get_mu_all_rating(i));
             RMSE = RMSE + (error * error);
             count++;

@@ -415,13 +415,13 @@ double SVDK_Nov17::rmse_probe(){
     return RMSE;
 }   
 
-double SVDK_Nov17::predict(int user, int movie, int time){
-    double rating = predict_point(user-1, movie-1, time);
+double SVDK_Nov17::predict(int user, int movie, int time, int index){
+    double rating = predict_point(user-1, movie-1, time, index);
     return rating;
 }
 
-double SVDK_Nov17::predict_point(int user, int movie, int date){
-    double rating = base_predict.predict(user+1, movie+1, date) +
+double SVDK_Nov17::predict_point(int user, int movie, int date, int index){
+    double rating = gsl_matrix_get(ratings, pt_num, 0) +
                     gsl_matrix_get(userSVD, user, 0) +
                     gsl_matrix_get(movieSVD, movie, 0);
     double norm = sqrt((double)userMovies[user].size());
